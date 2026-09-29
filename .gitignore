@@ -1,0 +1,16 @@
+# ビルド出力
+bin/
+obj/
+*.user
+*.suo
+
+# Visual Studio
+.vs/
+
+# 配布物（GitHub Releases で配る場合はこちらを有効にする）
+# release/
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
