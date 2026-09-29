@@ -7,8 +7,9 @@ obj/
 # Visual Studio
 .vs/
 
-# 配布物（GitHub Releases で配る場合はこちらを有効にする）
-# release/
+# 配布用の書庫。Releases の添付と外部アップローダで配るので、リポジトリには入れない。
+# Releases の添付ファイルはリポジトリ本体とは別管理なので、無視していても配れる。
+release/*.zip
 
 # OS
 Thumbs.db
