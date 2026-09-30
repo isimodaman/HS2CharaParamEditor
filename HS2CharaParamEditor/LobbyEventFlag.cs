@@ -37,87 +37,80 @@ namespace HS2CharaParamEditor
     /// </summary>
     internal static class LobbyEventFlag
     {
+        /// <summary>
+        /// イベント番号と行き先マップの対応（v0.10.0.0 で実機のテーブルから確定）。
+        ///
+        ///   28 入浴中     → マップ 101 風呂
+        ///   29 シャワー中 → マップ 100 シャワー
+        ///   30 トイレ中   → マップ 103 和式トイレ
+        ///   31 トイレ中   → マップ 102 洋式トイレ
+        ///   32 睡眠中     → マップ 3,5,7,10,16
+        ///
+        /// 28/29 と 30/31 は**通常版と自慰版ではない**。
+        /// 入浴とシャワー、和式と洋式という行き先の違いである。
+        /// v0.9.x まではこれを取り違えており、29 と 31 を選択肢から外していた。
+        ///
+        /// 各イベントの meetingLocationMaps は1件しか持たないので、
+        /// 番号を立てた時点で行き先のマップが確定する。
+        /// 汚れ・尿意が満ちたときの抽選は、この対から1つをランダムに選んでいる。
+        /// </summary>
         internal const int None = -1;
-        internal const int Bath = 28;         // 風呂 通常
-        internal const int BathMast = 29;     // 風呂 自慰（ゲームが立てる。表示のみ）
-        internal const int Toilet = 30;       // トイレ 通常
-        internal const int ToiletMast = 31;   // トイレ 自慰（同上）
+        internal const int Bath = 28;         // 入浴
+        internal const int Shower = 29;       // シャワー
+        internal const int ToiletJp = 30;     // 和式トイレ
+        internal const int ToiletWest = 31;   // 洋式トイレ
         internal const int Sleep = 32;        // 睡眠
-
-        internal const int KindNone = 0;
-        internal const int KindBath = 1;
-        internal const int KindToilet = 2;
-        internal const int KindSleep = 3;
-        internal const int KindOther = 9;     // 24(初H)・16(脱走)・29/31(自慰版) など、こちらで扱わないもの
 
         /// <summary>マップ選択に効くのは1人目の枠だけ。</summary>
         internal const int EffectiveSlot = 0;
-
-        /// <summary>
-        /// 自慰版(29/31)は KindOther に落とす。
-        /// 汚れ・尿意が満ちていればバニラの抽選もこの番号を立てるため、
-        /// 選択肢としては出さずに「そのまま」で温存し、
-        /// 選び直されない限り書き換えないようにする。
-        /// </summary>
-        internal static void Decode(int eventID, out int kind)
-        {
-            switch (eventID)
-            {
-                case Bath: kind = KindBath; return;
-                case Toilet: kind = KindToilet; return;
-                case Sleep: kind = KindSleep; return;
-            }
-            kind = eventID < 0 ? KindNone : KindOther;
-        }
-
-        internal static int Encode(int kind, int currentID)
-        {
-            switch (kind)
-            {
-                case KindBath: return Bath;
-                case KindToilet: return Toilet;
-                case KindSleep: return Sleep;
-                case KindOther: return currentID;
-                default: return None;
-            }
-        }
 
         internal static string Describe(int eventID)
         {
             switch (eventID)
             {
-                case Bath: return "風呂（通常）";
-                case BathMast: return "風呂（自慰）";
-                case Toilet: return "トイレ（通常）";
-                case ToiletMast: return "トイレ（自慰）";
+                case Bath: return "風呂（入浴）";
+                case Shower: return "シャワー";
+                case ToiletJp: return "トイレ（和式）";
+                case ToiletWest: return "トイレ（洋式）";
                 case Sleep: return "睡眠";
             }
             return eventID < 0 ? "なし" : "その他 (" + eventID + ")";
         }
 
-        internal static OptionList BuildKinds(int currentID)
+        /// <summary>
+        /// プルダウンの選択肢。値はイベント番号そのもの。
+        /// 24(初H) や 16(脱走) などゲームが別途入れる番号が立っているときは、
+        /// 先頭に「そのまま」を出して温存する（選び直さない限り書き換わらない）。
+        /// </summary>
+        internal static OptionList BuildChoices(int currentID)
         {
             List<int> values = new List<int>();
             List<string> labels = new List<string>();
 
-            int kind;
-            Decode(currentID, out kind);
-            if (kind == KindOther)
+            if (currentID >= 0 && !IsKnown(currentID))
             {
-                values.Add(KindOther);
+                values.Add(currentID);
                 labels.Add("そのまま (" + currentID + ")");
             }
 
-            values.Add(KindNone); labels.Add("なし");
-            values.Add(KindBath); labels.Add("風呂");
-            values.Add(KindToilet); labels.Add("トイレ");
-            values.Add(KindSleep); labels.Add("睡眠");
+            values.Add(None); labels.Add("なし");
+            values.Add(Bath); labels.Add("風呂（入浴）");
+            values.Add(Shower); labels.Add("シャワー");
+            values.Add(ToiletJp); labels.Add("トイレ（和式）");
+            values.Add(ToiletWest); labels.Add("トイレ（洋式）");
+            values.Add(Sleep); labels.Add("睡眠");
 
             OptionList list = new OptionList();
             list.Values = values.ToArray();
             list.Labels = labels.ToArray();
             list.FromGame = false;
             return list;
+        }
+
+        private static bool IsKnown(int eventID)
+        {
+            return eventID == Bath || eventID == Shower
+                || eventID == ToiletJp || eventID == ToiletWest || eventID == Sleep;
         }
 
         // ------------------------------------------------------------------

@@ -17,7 +17,7 @@ namespace HS2CharaParamEditor
     {
         public const string GUID = "com.isimodaman.hs2.charaparamediter";
         public const string PluginName = "HS2CharaParamEditor";
-        public const string Version = "0.9.1.0";
+        public const string Version = "0.10.0.0";
 
         internal static ManualLogSource Log;
 

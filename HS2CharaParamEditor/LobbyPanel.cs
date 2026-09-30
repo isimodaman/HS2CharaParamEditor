@@ -65,9 +65,9 @@ namespace HS2CharaParamEditor
         private bool _secEvent = true;
 
         // 待ち合わせイベントフラグ。カードではなくセーブデータ側の状態。
-        private OptionList _eventKinds = new OptionList();
+        private OptionList _eventChoices = new OptionList();
         private int _eventCurrentId = LobbyEventFlag.None;
-        private int _eventKind = LobbyEventFlag.KindNone;
+        private int _eventChoice = LobbyEventFlag.None;
         private bool _eventAvailable;
         private string _eventNote = string.Empty;
 
@@ -192,8 +192,8 @@ namespace HS2CharaParamEditor
                 LobbyEventFlag.Target t = LobbyEventFlag.Resolve(_slot, _target);
                 _eventAvailable = t.Valid;
                 _eventCurrentId = LobbyEventFlag.Get(t);
-                LobbyEventFlag.Decode(_eventCurrentId, out _eventKind);
-                _eventKinds = LobbyEventFlag.BuildKinds(_eventCurrentId);
+                _eventChoice = _eventCurrentId;
+                _eventChoices = LobbyEventFlag.BuildChoices(_eventCurrentId);
                 _eventNote = t.Valid
                     ? (_slot == LobbyEventFlag.EffectiveSlot
                         ? string.Empty
@@ -204,8 +204,8 @@ namespace HS2CharaParamEditor
             {
                 _eventAvailable = false;
                 _eventCurrentId = LobbyEventFlag.None;
-                _eventKind = LobbyEventFlag.KindNone;
-                _eventKinds = LobbyEventFlag.BuildKinds(LobbyEventFlag.None);
+                _eventChoice = LobbyEventFlag.None;
+                _eventChoices = LobbyEventFlag.BuildChoices(LobbyEventFlag.None);
                 _eventNote = "取得に失敗: " + ex.Message;
             }
         }
@@ -445,7 +445,7 @@ namespace HS2CharaParamEditor
                 GUI.enabled = prevEnabled && _eventAvailable;
 
                 Row();
-                Dropdown("設定", DdLobbyEvent, _eventKinds, _eventKind);
+                Dropdown("設定", DdLobbyEvent, _eventChoices, _eventChoice);
                 GUILayout.FlexibleSpace();
                 EndRow();
 
@@ -677,7 +677,7 @@ namespace HS2CharaParamEditor
                 case DdMind: return NameSources.Mind;
                 case DdHAttribute: return NameSources.HAttribute;
                 case DdState: return NameSources.NowState;
-                case DdLobbyEvent: return _eventKinds;
+                case DdLobbyEvent: return _eventChoices;
                 default: return null;
             }
         }
@@ -701,7 +701,7 @@ namespace HS2CharaParamEditor
                     }
                     break;
                 case DdLobbyEvent:
-                    _eventKind = value;
+                    _eventChoice = value;
                     break;
             }
         }
@@ -714,7 +714,7 @@ namespace HS2CharaParamEditor
             // イベントフラグはセーブデータ側の状態なので、カードの適用とは別に書き込む。
             if (_eventAvailable)
             {
-                int want = LobbyEventFlag.Encode(_eventKind, _eventCurrentId);
+                int want = _eventChoice;
                 if (want != _eventCurrentId)
                 {
                     string eventMessage;
