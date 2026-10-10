@@ -18,6 +18,7 @@ Honey Select 2 Libido DX 向けの BepInEx プラグイン。
 | ゲーム | Honey Select 2 **Libido DX** |
 | プラグイン基盤 | BepInEx 5.4.x |
 | 依存 | HS2API (KKAPI) |
+| 任意 | ConfigurationManager（あると設定を画面から変更でき、項目名も翻訳されます。無くても動作します） |
 
 **FemaleParameterInfo (FPI) とは同時に使えない。** 同じ場所に同じ役割のパネルが二重に出て、
 同じ `gameinfo2` を奪い合う。どちらか一方を無効にすること。
@@ -178,6 +179,22 @@ Honey Select 2 Libido DX 向けの BepInEx プラグイン。
 
 ---
 
+## 表示と言語
+
+パネルは**文字幅に合わせて自動で拡張**する。フォントサイズや言語を変えても崩れない。
+**拡縮**と**不透明度**は Config から変えられる。位置はドラッグで決まり、自動的に保存される。
+
+数値はスライダーだけでなく**キー入力でも指定できる**。
+
+言語は日本語と英語に対応している。対訳は DLL と同じ場所に置く
+`HS2CharaParamEditor.xml` が持っており、**訳が無い項目は日本語のまま表示される**ので、
+XML を消しても動作に支障はない。項目を足したい場合はこのファイルを編集する。
+
+ConfigurationManager を導入していると、設定画面の項目名も表示言語に合わせて翻訳される。
+未導入でもプラグイン本体は通常どおり動作する。
+
+---
+
 ## Config
 
 | キー | 既定 | 内容 |
@@ -190,7 +207,10 @@ Honey Select 2 Libido DX 向けの BepInEx プラグイン。
 | カードにも書き戻す | true | 適用時にカード(.png)へも保存する |
 | バックアップを作る | true | 初回保存時に `<カード名>.png.bak` を残す |
 | 上限解除 | false | スライダの範囲を -100〜200 に広げる |
-| ウィンドウ位置X / Y | -1 | ドラッグすると自動更新 |
+| 位置 | -1, -1 | パネルの位置。ドラッグすると自動更新 |
+| 拡縮 | 1.0 | パネルの表示倍率（0.5〜2.0） |
+| 不透明度 | 1.0 | パネル背景の不透明度（0.5〜1.0） |
+| Language | 日本語 | 表示言語。切り替えは即時反映される |
 
 声質の範囲は SliderUnlocker の設定に追随する（未導入なら 0〜100）。
 
@@ -250,5 +270,15 @@ MIT License. [LICENSE](LICENSE) を参照。
 
 ## 謝辞
 
+- **変態さん＠奇行種** 氏 — UI 全般の刷新、多言語対応、プロセス指定の追加ほか、
+  多数の改修をいただきました（v0.10.0.1 〜 v0.10.0.4）。
+  **現在のパネルの使い勝手は、ほぼ氏の手によるものです。**
 - パラメータの対応関係を調べる際に **HS2CharEdit** を参照した（コードの流用はしていない）
 - **FemaleParameterInfo** が、この機能をロビーに置くという発想の元になっている
+
+## 同梱物のライセンス
+
+本体は MIT。ビルド時の参照として `HS2CharaParamEditor/lib/ConfigurationManager.dll`
+（[BepInEx.ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager) v15.1.0.0 / **LGPL-3.0**）
+を同梱しています。ライセンス文は同じフォルダの `ConfigurationManager-LICENSE.txt` を参照してください。
+**配布物（zip / 7z）には含まれません。**

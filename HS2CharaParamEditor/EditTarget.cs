@@ -1,10 +1,11 @@
-using System;
-using System.Collections.Generic;
 using Actor;
 using AIChara;
 using GameLoadCharaFileSystem;
 using HarmonyLib;
 using HS2;
+using System;
+using System.Collections.Generic;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -42,7 +43,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("scrollCtrl を取得できません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("scrollCtrl を取得できません: ") + ex.Message);
                 return null;
             }
         }
@@ -116,7 +117,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("情報パネルの表示対象を取得できません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("情報パネルの表示対象を取得できません: ") + ex.Message);
             }
 
             // 2. スクロールリストの確定選択
@@ -137,7 +138,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("一覧の選択情報を取得できません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("一覧の選択情報を取得できません: ") + ex.Message);
                 return null;
             }
         }
@@ -169,7 +170,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("枠 " + slot + " の参照に失敗: " + ex.Message);
+                Plugin.Log.LogWarning(LC("枠 {0} の参照に失敗: ", slot) + ex.Message);
             }
 
             // 2. 未割り当てなら、その枠を選んでいる最中に限り一覧のハイライトを対象にする
@@ -236,16 +237,16 @@ namespace HS2CharaParamEditor
                 file.skipRangeCheck = true;
                 if (!file.LoadCharaFile(path, 255, false, false))
                 {
-                    Plugin.Log.LogWarning("カードを読めませんでした: " + path);
+                    Plugin.Log.LogWarning(LC("カードを読めませんでした: ") + path);
                     return null;
                 }
                 CardCache[path] = file;
-                Plugin.Log.LogInfo("カードを読み込みました: " + path);
+                Plugin.Log.LogInfo(LC("カードを読み込みました: ") + path);
                 return file;
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogError("カード読み込みで例外: " + ex);
+                Plugin.Log.LogError(LC("カード読み込みで例外: ") + ex);
                 return null;
             }
         }

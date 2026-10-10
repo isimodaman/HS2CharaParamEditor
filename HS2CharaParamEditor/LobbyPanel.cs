@@ -1,6 +1,9 @@
 using System;
-using Actor;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using UnityEngine;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -13,15 +16,15 @@ namespace HS2CharaParamEditor
         private const int PopupWindowId = 5482312;
         private const string PanelTitle = "CharaParamEditor ver." + Plugin.Version;
         // 幅はステータス行（ラベル+スライダ+値 の2列）がいちばん広くなるように取ってある。
-        //   44 + 78 + 32 + 4 + 44 + 78 + 32 = 312、コントロール間の余白を足して約 340。
+        //   39 + 89 + 32 + 4 + 39 + 89 + 32 = 324、コントロール間の余白を足して約 344。
         // WindowWidth はこれに枠の内側余白（左右 8 ずつ）と若干のマージンを足した値。
         // 他の行（メンタル・状態・最下段のボタン）はこれより狭くなるよう各幅を決めている。
-        private const float WindowWidth = 364f;
-        private const float LabelW = 44f;
-        private const float DropW = 108f;
-        private const float SliderW = 78f;
+        private const float DefaultWindowWidth = 364f;
+        private const float DefaultWindowHeight = 562f;
+        private const float DefaultLabelW = 39f;
+        private const float DefaultDropW = 125f;
+        private const float DefaultSliderW = 89f;
         private const float ValueW = 32f;
-        private const float ToggleW = 48f;      // 状態の 固定 / 破綻 / 依存
         private const float BottomMargin = 2f;
 
         private const int DdPersonality = 0;
@@ -35,7 +38,7 @@ namespace HS2CharaParamEditor
         internal static LobbyPanel Instance;
 
         private readonly ParamState _state = new ParamState();
-        private int _slot;                       // パネルが今見ている枠（タブ）
+        private int _slot;                      // パネルが今見ている枠（タブ）
         private int _lastGameSlot = int.MinValue;
         private EditTarget _target;
         private string _charaName = string.Empty;
@@ -43,12 +46,12 @@ namespace HS2CharaParamEditor
         private bool _voiceDragged;             // 声質スライダを動かした。離した時に試聴する
         private bool _wasForeground;            // 前フレームでパネルが出ていたか
 
-        private Rect _rect = new Rect(60f, 60f, WindowWidth, 300f);
+        private Rect _rect = new Rect(0f, 0f, DefaultWindowWidth, DefaultWindowHeight);
         private string _message = string.Empty;
         private float _messageUntil;
 
         private int _openDropdown = -1;
-        private int _mode;                       // 0 = 待ち合わせ / 1 = マップ選択
+        private int _mode;                      // 0 = 待ち合わせ / 1 = マップ選択
         private bool _modeKnown;
         private Rect _popupRect;
         private Vector2 _popupScroll;
@@ -71,23 +74,52 @@ namespace HS2CharaParamEditor
         private bool _eventAvailable;
         private string _eventNote = string.Empty;
 
+        internal static bool Initialized;
+        private static float _labelW = DefaultLabelW;
+        private static float _dropW = DefaultDropW;
+        private static float _sliderW = DefaultSliderW;
+        private static float _reloadApplyW = 66f;
+        private static GUIStyle _sliderStyle;
+        private static GUIStyle _valueStyle;
+        private static GUIStyle _dropdownWindowStyle;
+        private static GUIStyle _dropdownButtonStyle;
+        private static bool _dropdownVisible;
         private static Font _font;
         private static int _fontSize;
 
+        [SuppressMessage("CodeQuality", "IDE0051")]
         private void Awake()
         {
             Instance = this;
-            Plugin.Log.LogInfo("待ち合わせ画面にパネルを生成しました。");
+            Plugin.Log.LogInfo(LC("待ち合わせ画面にパネルを生成しました。"));
             NameSources.EnsureBuilt();
             SliderRange.Refresh();
-            RestorePosition();
         }
 
+        [SuppressMessage("CodeQuality", "IDE0051")]
         private void OnDestroy()
         {
             VoicePreview.Stop();
             if (Instance == this)
                 Instance = null;
+            DestroyDropdown();
+            DestroyFont();
+        }
+
+        internal static void DestroyFont()
+        {
+            Destroy(_font);
+            _font = null;
+        }
+
+        internal void DestroyDropdown()
+        {
+            _dropdownVisible = false;
+            _openDropdown = -1;
+            if (_dropdownWindowStyle == null)
+                return;
+            Destroy(_dropdownWindowStyle.normal.background);
+            _dropdownWindowStyle.normal.background = null;
         }
 
         internal static void NotifySelected(int entryNo)
@@ -104,7 +136,7 @@ namespace HS2CharaParamEditor
             Instance._mode = mode;
             Instance._modeKnown = true;
             if (mode != 0)
-                Instance._openDropdown = -1;
+                Instance.DestroyDropdown();
         }
 
         /// <summary>
@@ -142,46 +174,61 @@ namespace HS2CharaParamEditor
         {
             if (slot < 0)
                 return;
-            _slot = slot;
-            LoadSlot();
+            LoadSlot(slot);
         }
 
-        private void LoadSlot()
+        private bool LoadSlot(int? slot = null, bool logging = true)
         {
+            int newSlot = slot ?? _slot;
             try
             {
-                _target = TargetResolver.Resolve(_slot);
-                if (_target == null || _target.File == null)
+                _target = TargetResolver.Resolve(newSlot);
+                if (_target != null && _target.File != null)
                 {
-                    _charaName = string.Empty;
-                    _state.Loaded = false;
-                    _eventAvailable = false;
-                    _openDropdown = -1;
+                    _state.LoadFrom(_target.File);
+                    _charaName = _target.DisplayName;
+                    _idleLogged = false;
+                    ReadEventFlag();
 
-                    // この状態ではパネルを出さないので、原因はログに残す。
-                    // 枠が埋まるまで 20 フレームごとにここへ来るため、入ったときだけ書く。
-                    if (!_idleLogged)
-                    {
-                        _idleLogged = true;
-                        Plugin.Log.LogInfo("枠 " + (_slot + 1) + " が未割り当てのため、パネルを表示しません。（"
-                                           + Applier.DescribeRoster() + "）");
-                    }
-                    return;
+                    DestroyDropdown();
+                    if (logging)
+                        Plugin.Log.LogInfo(LC("枠 {0} → {1}（{2}）",
+                            newSlot + 1,
+                            _charaName,
+                            LC(_target.IsLive ? "実体" : "カード")));
+
+                    // set slot if success
+                    _slot = newSlot;
+
+                    return true;
                 }
 
-                _state.LoadFrom(_target.File);
-                _charaName = _target.DisplayName;
-                _idleLogged = false;
-                ReadEventFlag();
-               
-                _openDropdown = -1;
-                Plugin.Log.LogInfo("枠 " + (_slot + 1) + " → " + _charaName
-                                   + "（" + (_target.IsLive ? "実体" : "カード") + "）");
+                _charaName = string.Empty;
+                _state.Loaded = false;
+                _eventAvailable = false;
+                DestroyDropdown();
+
+                // この状態ではパネルを出さないので、原因はログに残す。
+                // 枠が埋まるまで 20 フレームごとにここへ来るため、入ったときだけ書く。
+                if (!_idleLogged)
+                {
+                    _idleLogged = true;
+                    if (logging)
+                        Plugin.Log.LogInfo(LC("枠 {0} が未割り当てのため、パネルを表示しません。（{1}）",
+                            newSlot + 1,
+                            Applier.DescribeRoster()));
+                }
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("枠の読み込みに失敗しました: " + ex.Message);
+                if (logging)
+                    Plugin.Log.LogWarning(LC("枠の読み込みに失敗しました: ") + ex.Message);
             }
+
+            // reset if failed
+            if (_slot != newSlot)
+                LoadSlot(_slot, false);
+            return false;
         }
 
         /// <summary>今の待ち合わせイベントフラグを読み直す。</summary>
@@ -197,8 +244,8 @@ namespace HS2CharaParamEditor
                 _eventNote = t.Valid
                     ? (_slot == LobbyEventFlag.EffectiveSlot
                         ? string.Empty
-                        : "マップ選択に効くのは1人目のフラグです。")
-                    : (t.Reason ?? "設定先を特定できません。");
+                        : LC("マップ選択に効くのは1人目のフラグです。"))
+                    : (t.Reason ?? LC("設定先を特定できません。"));
             }
             catch (Exception ex)
             {
@@ -206,10 +253,16 @@ namespace HS2CharaParamEditor
                 _eventCurrentId = LobbyEventFlag.None;
                 _eventChoice = LobbyEventFlag.None;
                 _eventChoices = LobbyEventFlag.BuildChoices(LobbyEventFlag.None);
-                _eventNote = "取得に失敗: " + ex.Message;
+                _eventNote = LC("取得に失敗: ") + ex.Message;
             }
         }
 
+        internal void BuildChoices()
+        {
+            _eventChoices = LobbyEventFlag.BuildChoices(_eventCurrentId);
+        }
+
+        [SuppressMessage("CodeQuality", "IDE0051")]
         private void Update()
         {
             FollowGameSlot();
@@ -223,9 +276,6 @@ namespace HS2CharaParamEditor
             if (_wasForeground && !foreground)
                 VoicePreview.Stop();
             _wasForeground = foreground;
-
-            if (Input.GetMouseButtonUp(0))
-                PersistPosition();
         }
 
         /// <summary>
@@ -255,33 +305,7 @@ namespace HS2CharaParamEditor
 
         // ------------------------------------------------------------------
 
-        private void RestorePosition()
-        {
-            float x = Plugin.CfgWindowX.Value;
-            float y = Plugin.CfgWindowY.Value;
-            if (x < 0f || y < 0f || x > Screen.width - 40f || y > Screen.height - 40f)
-            {
-                x = Screen.width - WindowWidth - 24f;
-                y = 60f;
-            }
-            _rect.x = x;
-            _rect.y = y;
-            _rect.width = WindowWidth;
-        }
-
-        private void PersistPosition()
-        {
-            if (!Plugin.CfgVisible.Value)
-                return;
-            if (Math.Abs(Plugin.CfgWindowX.Value - _rect.x) < 0.5f
-                && Math.Abs(Plugin.CfgWindowY.Value - _rect.y) < 0.5f)
-                return;
-            Plugin.CfgWindowX.Value = _rect.x;
-            Plugin.CfgWindowY.Value = _rect.y;
-        }
-
-        // ------------------------------------------------------------------
-
+        [SuppressMessage("CodeQuality", "IDE0051")]
         private void OnGUI()
         {
             if (!Plugin.CfgVisible.Value)
@@ -296,148 +320,230 @@ namespace HS2CharaParamEditor
             // フォントの差し替えもここより後なので、他プラグインの IMGUI には触れない。
             if (_target == null || _target.File == null || !_state.Loaded)
             {
-                _openDropdown = -1;
+                DestroyDropdown();
                 return;
             }
 
-            EnsureFont();
-            Font prev = GUI.skin.font;
-            if (_font != null)
-                GUI.skin.font = _font;
-
-            CloseDropdownIfClickedOutside();
-
-            _rect = GUILayout.Window(MainWindowId, _rect, DrawMain,
-                                     PanelTitle, GUILayout.Width(WindowWidth));
-            KKAPI.Utilities.IMGUIUtils.EatInputInRect(_rect);
-
-            if (_openDropdown >= 0)
+            if (!Initialized)
             {
-                // パネルをドラッグしても離れないよう、毎フレーム置き直す。
-                _popupRect = PlacePopup(_openDropdown, CurrentList());
-                _popupRect = GUILayout.Window(PopupWindowId, _popupRect, DrawPopup, string.Empty,
-                                              GUILayout.Width(_popupRect.width),
-                                              GUILayout.Height(_popupRect.height));
-                GUI.BringWindowToFront(PopupWindowId);
-                KKAPI.Utilities.IMGUIUtils.EatInputInRect(_popupRect);
+                GUIStyle style = GUI.skin.label;
+                string[] labels = {
+                    "名前", "性格", "特性", "心情", "H属性", "好感度", "嫌悪", "従順度",
+                    "依存", "悦び", "破綻", "汚れ", "尿意", "疲労", "性欲", "状態",
+                    "現在", "設定" };
+                _labelW = labels.Max(text => style.CalcSize(new GUIContent(LC(text))).x);
+
+                style = GUI.skin.button;
+                IEnumerable<string> dropdowns =
+                    NameSources.Personality.Labels.Concat(
+                    NameSources.Trait.Labels).Concat(
+                    NameSources.Mind.Labels).Concat(
+                    NameSources.HAttribute.Labels).Concat(
+                    NameSources.NowState.Labels).Concat(
+                    _eventChoices.Labels);
+                _dropW = Math.Max(DefaultDropW, dropdowns.Max(text => style.CalcSize(new GUIContent(text)).x));
+
+                _sliderW = _dropW - (DefaultDropW - DefaultSliderW);
+                _rect.width = (_labelW + _dropW) * 2f + (DefaultWindowWidth - (DefaultLabelW + DefaultDropW) * 2f);
+
+                string[] reloadApply = { "読み直す", "適用" };
+                _reloadApplyW = reloadApply.Max(text => style.CalcSize(new GUIContent(LC(text))).x) + 12f;
+
+                _sliderStyle = new GUIStyle(GUI.skin.horizontalSlider) { margin = new RectOffset(4, 4, 9, 9) };
+                _valueStyle = new GUIStyle(GUI.skin.textField) { alignment = TextAnchor.MiddleCenter };
+                RectOffset offsetZero = new RectOffset();
+                _dropdownWindowStyle = new GUIStyle(GUI.skin.window) { normal = new GUIStyleState { background = null }, margin = offsetZero, padding = offsetZero };
+                _dropdownButtonStyle = new GUIStyle(GUI.skin.button) { margin = offsetZero };
+
+                Initialized = true;
             }
 
-            // 声質スライダを離したら試聴する。ドラッグ中は鳴らさない。
-            //
-            // Input.GetMouseButtonUp では拾えない。KKAPI の EatInputInRect が
-            // カーソルのある間ずっと Input.ResetInputAxes() を呼ぶので、
-            // パネル上のマウス操作は Input 側に出てこない。
-            // 掴んでいる間は hotControl がスライダを指しているため、そちらで見る。
-            if (_voiceDragged && Event.current.type == EventType.Repaint && GUIUtility.hotControl == 0)
+            Matrix4x4 matrix = GUI.matrix;
+            float scale = Plugin.CfgWindowScale.Value;
+            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
+            try
             {
-                _voiceDragged = false;
-                VoicePreview.Play(_state.Personality, _state.VoiceRate);
-            }
+                EnsureFont();
+                Font font = GUI.skin.font;
+                if (_font != null)
+                    GUI.skin.font = _font;
+                try
+                {
+                    CloseDropdownIfClickedOutside();
 
-            GUI.skin.font = prev;
+                    // load window position
+                    _rect.position = Plugin.CfgWindowPosition.Value;
+                    bool initializedPosition = _rect.x < 0 || _rect.y < 0;
+                    if (initializedPosition)
+                    {
+                        // calculate window size at the out of screen
+                        _rect.x = Screen.width / scale;
+                        _rect.y = Screen.height / scale;
+                    }
+
+                    // draw window
+                    GUI.DrawTexture(_rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, true, 0, new Color(0f, 0f, 0f, (Plugin.CfgWindowOpacity.Value - 0.5f) * 2f), 0, 9);
+                    _rect = GUILayout.Window(MainWindowId, _rect, DrawMain, PanelTitle);
+                    KKAPI.Utilities.IMGUIUtils.EatInputInRect(_rect);
+
+                    // save window position
+                    if (!initializedPosition)
+                    {
+                        // move onto the screen
+                        _rect.x = Mathf.Clamp(_rect.x, 0, Screen.width / scale - _rect.width);
+                        _rect.y = Mathf.Clamp(_rect.y, 0, Screen.height / scale - _rect.height);
+                        Plugin.CfgWindowPosition.Value = _rect.position;
+                    }
+                    else if (Event.current.type == EventType.Repaint)
+                    {
+                        // set initial position
+                        _rect.x = Math.Max((Screen.width - 24f) / scale - _rect.width, 0);
+                        _rect.y = Math.Max((Screen.height - 24f) / scale - _rect.height, 0);
+                        Plugin.CfgWindowPosition.Value = _rect.position;
+                    }
+
+                    if (_dropdownVisible)
+                    {
+                        // パネルをドラッグしても離れないよう、毎フレーム置き直す。
+                        _popupRect = PlacePopup(_openDropdown, CurrentList());
+                        if (!_dropdownWindowStyle.normal.background)
+                        {
+                            // it is destroy by "ForceReleaseCursor"of "HS2 Mouse Stuck Fix" plugin.
+                            Texture2D background = new Texture2D(1, 1, TextureFormat.ARGB32, false);
+                            background.SetPixel(0, 0, new Color(0f, 0f, 0f, Plugin.CfgWindowOpacity.Value));
+                            background.Apply();
+                            _dropdownWindowStyle.normal.background = background;
+                        }
+                        _popupRect = GUI.ModalWindow(PopupWindowId, _popupRect, DrawPopup, GUIContent.none, _dropdownWindowStyle);
+                        KKAPI.Utilities.IMGUIUtils.EatInputInRect(_popupRect);
+                    }
+
+                    // 声質スライダを離したら試聴する。ドラッグ中は鳴らさない。
+                    //
+                    // Input.GetMouseButtonUp では拾えない。KKAPI の EatInputInRect が
+                    // カーソルのある間ずっと Input.ResetInputAxes() を呼ぶので、
+                    // パネル上のマウス操作は Input 側に出てこない。
+                    // 掴んでいる間は hotControl がスライダを指しているため、そちらで見る。
+                    if (_voiceDragged && Event.current.type == EventType.Repaint && GUIUtility.hotControl == 0)
+                    {
+                        _voiceDragged = false;
+                        VoicePreview.Play(_state.Personality, _state.VoiceRate);
+                    }
+                }
+                finally
+                {
+                    GUI.skin.font = font;
+                }
+            }
+            finally
+            {
+                GUI.matrix = matrix;
+            }
         }
 
         // ------------------------------------------------------------------
 
         private void DrawMain(int id)
         {
+            DrawCloseButton();
+
             GUILayout.BeginVertical();
 
             DrawTabs();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(string.IsNullOrEmpty(_charaName) ? "(名前なし)" : _charaName);
+            GUILayout.Label(string.IsNullOrEmpty(_charaName) ? LC("(名前なし)") : _charaName);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(_target != null && _target.IsLive ? "実体" : "カード", GUILayout.Width(46f));
+            GUILayout.Label(LC(_target != null && _target.IsLive ? "実体" : "カード"));
             GUILayout.EndHorizontal();
 
-            if (Foldout("プロフィール", ref _secProfile))
+            if (Foldout(LC("プロフィール"), ref _secProfile))
             {
                 Row();
-                GUILayout.Label("名前", GUILayout.Width(LabelW));
+                GUILayout.Label(LC("名前"), GUILayout.Width(_labelW));
                 string name = GUILayout.TextField(_state.Name ?? string.Empty, 64);
                 if (name != _state.Name) { _state.Name = name; }
                 EndRow();
 
                 Row();
-                Dropdown("性格", DdPersonality, NameSources.Personality, _state.Personality);
+                Dropdown(LC("性格"), DdPersonality, NameSources.Personality, _state.Personality);
                 GUILayout.Space(4f);
                 VoiceSlider();
                 EndRow();
             }
 
-            if (Foldout("メンタル", ref _secMental))
+            if (Foldout(LC("メンタル"), ref _secMental))
             {
                 Row();
-                Dropdown("特性", DdTrait, NameSources.Trait, _state.Trait);
+                Dropdown(LC("特性"), DdTrait, NameSources.Trait, _state.Trait);
                 GUILayout.Space(4f);
-                Dropdown("心情", DdMind, NameSources.Mind, _state.Mind);
+                Dropdown(LC("心情"), DdMind, NameSources.Mind, _state.Mind);
                 EndRow();
 
                 Row();
-                Dropdown("H属性", DdHAttribute, NameSources.HAttribute, _state.HAttribute);
+                Dropdown(LC("H属性"), DdHAttribute, NameSources.HAttribute, _state.HAttribute);
                 GUILayout.FlexibleSpace();
                 EndRow();
             }
 
-            if (Foldout("ステータス", ref _secStatus))
+            if (Foldout(LC("ステータス"), ref _secStatus))
             {
                 Row();
-                _state.Favor = Stat("好感度", _state.Favor);
+                _state.Favor = Stat(LC("好感度"), _state.Favor);
                 GUILayout.Space(4f);
-                _state.Aversion = Stat("嫌悪", _state.Aversion);
+                _state.Aversion = Stat(LC("嫌悪"), _state.Aversion);
                 EndRow();
 
                 Row();
-                _state.Slavery = Stat("従順度", _state.Slavery);
+                _state.Slavery = Stat(LC("従順度"), _state.Slavery);
                 GUILayout.Space(4f);
-                _state.Dependence = Stat("依存", _state.Dependence);
+                _state.Dependence = Stat(LC("依存"), _state.Dependence);
                 EndRow();
 
                 Row();
-                _state.Enjoyment = Stat("悦び", _state.Enjoyment);
+                _state.Enjoyment = Stat(LC("悦び"), _state.Enjoyment);
                 GUILayout.Space(4f);
-                _state.Broken = Stat("破綻", _state.Broken);
+                _state.Broken = Stat(LC("破綻"), _state.Broken);
                 EndRow();
             }
 
-            if (Foldout("欲求", ref _secDesire))
+            if (Foldout(LC("欲求"), ref _secDesire))
             {
                 Row();
-                _state.Dirty = Stat("汚れ", _state.Dirty);
+                _state.Dirty = Stat(LC("汚れ"), _state.Dirty);
                 GUILayout.Space(4f);
-                _state.Toilet = Stat("尿意", _state.Toilet);
+                _state.Toilet = Stat(LC("尿意"), _state.Toilet);
                 EndRow();
 
                 Row();
-                _state.Tiredness = Stat("疲労", _state.Tiredness);
+                _state.Tiredness = Stat(LC("疲労"), _state.Tiredness);
                 GUILayout.Space(4f);
-                _state.Libido = Stat("性欲", _state.Libido);
+                _state.Libido = Stat(LC("性欲"), _state.Libido);
                 EndRow();
             }
 
-            if (Foldout("状態", ref _secState))
+            if (Foldout(LC("状態"), ref _secState))
             {
                 Row();
-                Dropdown("状態", DdState, NameSources.NowState, _state.NowState);
+                Dropdown(LC("状態"), DdState, NameSources.NowState, _state.NowState);
                 GUILayout.Space(4f);
-                bool lockState = GUILayout.Toggle(_state.LockNowState, "固定", GUILayout.Width(ToggleW));
+                bool lockState = GUILayout.Toggle(_state.LockNowState, LC("固定"));
                 if (lockState != _state.LockNowState) { _state.LockNowState = lockState; }
-                bool lb = GUILayout.Toggle(_state.LockBroken, "破綻", GUILayout.Width(ToggleW));
+                bool lb = GUILayout.Toggle(_state.LockBroken, LC("破綻"));
                 if (lb != _state.LockBroken) { _state.LockBroken = lb; }
-                bool ld = GUILayout.Toggle(_state.LockDependence, "依存", GUILayout.Width(ToggleW));
+                bool ld = GUILayout.Toggle(_state.LockDependence, LC("依存"));
                 if (ld != _state.LockDependence) { _state.LockDependence = ld; }
                 EndRow();
 
                 if (_state.StateEditedByHand && !_state.LockNowState)
-                    GUILayout.Label("状態を手動変更しています。適用時に固定が自動で入ります。");
+                    GUILayout.Label(LC("状態を手動変更しています。適用時に固定が自動で入ります。"));
             }
 
-            if (Foldout("待ち合わせイベント", ref _secEvent))
+            if (Foldout(LC("待ち合わせイベント"), ref _secEvent))
             {
                 Row();
-                GUILayout.Label("現在", GUILayout.Width(LabelW));
-                GUILayout.Label(LobbyEventFlag.Describe(_eventCurrentId), GUILayout.Width(DropW));
+                GUILayout.Label(LC("現在"), GUILayout.Width(_labelW));
+                GUILayout.Label(LobbyEventFlag.Describe(_eventCurrentId), GUILayout.Width(_dropW));
                 GUILayout.FlexibleSpace();
                 EndRow();
 
@@ -445,7 +551,7 @@ namespace HS2CharaParamEditor
                 GUI.enabled = prevEnabled && _eventAvailable;
 
                 Row();
-                Dropdown("設定", DdLobbyEvent, _eventChoices, _eventChoice);
+                Dropdown(LC("設定"), DdLobbyEvent, _eventChoices, _eventChoice);
                 GUILayout.FlexibleSpace();
                 EndRow();
 
@@ -458,7 +564,7 @@ namespace HS2CharaParamEditor
             DrawSeparator();
 
             Row();
-            bool saveCard = GUILayout.Toggle(Plugin.CfgSaveCard.Value, "カードにも保存", GUILayout.Width(108f));
+            bool saveCard = GUILayout.Toggle(Plugin.CfgSaveCard.Value, LC("カードにも保存"));
             if (saveCard != Plugin.CfgSaveCard.Value)
                 Plugin.CfgSaveCard.Value = saveCard;
 
@@ -466,17 +572,19 @@ namespace HS2CharaParamEditor
             Color pc = GUI.color;
             if (Plugin.CfgUnlockLimits.Value)
                 GUI.color = new Color(1f, 0.75f, 0.3f);
-            bool unlocked = GUILayout.Toggle(Plugin.CfgUnlockLimits.Value, "上限解除", GUILayout.Width(72f));
+            bool unlocked = GUILayout.Toggle(Plugin.CfgUnlockLimits.Value, LC("上限解除"));
             GUI.color = pc;
             if (unlocked != Plugin.CfgUnlockLimits.Value)
                 Plugin.CfgUnlockLimits.Value = unlocked;
 
-            if (GUILayout.Button("読み直す", GUILayout.Width(66f)))
+            GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button(LC("読み直す"), GUILayout.Width(_reloadApplyW)))
             {
                 LoadSlot();
-                SetMessage("現在の値を読み直しました。");
+                SetMessage(LC("現在の値を読み直しました。"));
             }
-            if (GUILayout.Button("適用", GUILayout.Width(56f)))
+            if (GUILayout.Button(LC("適用"), GUILayout.Width(_reloadApplyW)))
                 DoApply();
             EndRow();
 
@@ -486,10 +594,27 @@ namespace HS2CharaParamEditor
 
             GUILayout.Space(BottomMargin);
             GUILayout.EndVertical();
-            GUI.DragWindow(new Rect(0f, 0f, WindowWidth, 20f));
+            GUI.DragWindow(new Rect(0f, 0f, _rect.width, 20f));
         }
 
         // ------------------------------------------------------------------
+
+        private void DrawCloseButton()
+        {
+            Color oldColor = GUI.color;
+            try
+            {
+                GUI.color = Color.red;
+                if (GUI.Button(new Rect(_rect.width - 19f, 2f, 15f, 15f), GUIContent.none))
+                {
+                    Plugin.CfgVisible.Value = false;
+                }
+            }
+            finally
+            {
+                GUI.color = oldColor;
+            }
+        }
 
         /// <summary>1人目 / 2人目 のタブ。ゲーム側の選択に追従するが、手動でも切り替えられる。</summary>
         private void DrawTabs()
@@ -502,7 +627,7 @@ namespace HS2CharaParamEditor
                 Color pc = GUI.backgroundColor;
                 if (active)
                     GUI.backgroundColor = new Color(0.55f, 0.85f, 0.75f);
-                if (GUILayout.Button((i + 1) + "人目", GUILayout.Height(21f)) && !active)
+                if (GUILayout.Button(LC((i + 1) + "人目", out string text) ? text : LC("{0}人目", i + 1), GUILayout.Height(21f)) && !active)
                     SwitchSlot(i);
                 GUI.backgroundColor = pc;
             }
@@ -529,9 +654,9 @@ namespace HS2CharaParamEditor
 
         private void Dropdown(string label, int dropdownId, OptionList list, int value)
         {
-            GUILayout.Label(label, GUILayout.Width(LabelW));
+            GUILayout.Label(label, GUILayout.Width(_labelW));
             string text = list != null && list.Count > 0 ? list.LabelOfValue(value) : value.ToString();
-            bool clicked = GUILayout.Button(text, GUILayout.Width(DropW));
+            bool clicked = GUILayout.Button(text, GUILayout.Width(_dropW));
 
             // GetLastRect がボタンの実座標を返すのは Repaint のときだけで、
             // 押された瞬間（MouseUp）に呼ぶとダミー矩形が返る。毎フレーム控えておく。
@@ -544,11 +669,12 @@ namespace HS2CharaParamEditor
 
             if (_openDropdown == dropdownId)
             {
-                _openDropdown = -1;
+                DestroyDropdown();
                 return;
             }
 
             _openDropdown = dropdownId;
+            _dropdownVisible = true;
             _popupScroll = Vector2.zero;
         }
 
@@ -559,21 +685,36 @@ namespace HS2CharaParamEditor
         /// </summary>
         private Rect PlacePopup(int dropdownId, OptionList list)
         {
-            const float margin = 4f;
+            float w = _dropW;
+            float h = Mathf.Max(48f, _rect.height);
 
-            float w = DropW + 24f;
-            float h = PopupHeight(list, _rect.height - margin * 2f);
+            int count = list != null ? list.Count : 0;
+            if (count > 0)
+            {
+                float row = _dropdownButtonStyle.CalcHeight(new GUIContent("Ay"), w) + 2f;
+                float calcHeight = row * count;
+                if (calcHeight > h ||
+                    list.Labels.Any(label => _dropdownButtonStyle.CalcSize(new GUIContent(label)).x > w) &&
+                    (calcHeight += GUI.skin.horizontalScrollbar.fixedHeight) > h)
+                {
+                    w += GUI.skin.verticalScrollbar.fixedWidth;
+                }
+                else
+                {
+                    h = calcHeight;
+                }
+            }
 
             Rect anchor = dropdownId >= 0 && dropdownId < DdCount
                 ? _ddAnchors[dropdownId]
-                : new Rect(0f, 0f, DropW, 20f);
+                : new Rect(0f, 0f, w, 20f);
 
-            float minX = _rect.x + margin;
-            float maxX = Mathf.Max(minX, _rect.xMax - w - margin);
+            float minX = _rect.x;
+            float maxX = Mathf.Max(minX, _rect.xMax - w);
             float x = Mathf.Clamp(_rect.x + anchor.x, minX, maxX);
 
-            float minY = _rect.y + margin;
-            float maxY = Mathf.Max(minY, _rect.yMax - h - margin);
+            float minY = _rect.y;
+            float maxY = Mathf.Max(minY, _rect.yMax - h);
             float y = _rect.y + anchor.yMax;                 // 既定はボタンの直下
             if (y > maxY)
             {
@@ -584,54 +725,38 @@ namespace HS2CharaParamEditor
             return new Rect(x, y, w, h);
         }
 
-        /// <summary>
-        /// 一覧の高さ。全項目が出る高さを基本とし、パネルに収まらないときだけそこで頭打ちにする。
-        /// 1項目の高さはフォントサイズ（Config で 9〜20）によって変わるので、
-        /// 決め打ちの値ではなく実際のスタイルから測る。
-        /// </summary>
-        private static float PopupHeight(OptionList list, float available)
-        {
-            float cap = Mathf.Max(48f, available);
-
-            int count = list != null ? list.Count : 0;
-            if (count <= 0)
-                return Mathf.Min(56f, cap);
-
-            GUIStyle button = GUI.skin.button;
-
-            // 縦に積むと隣り合うマージンは重なるので、行の間隔は片側ぶんで数える。
-            float gap = Mathf.Max(button.margin.top, button.margin.bottom);
-            float row = button.CalcHeight(new GUIContent("Ay"), DropW) + gap;
-
-            // ウィンドウの枠（空タイトルでも上端は確保される）と、下端のマージン。
-            float chrome = GUI.skin.window.padding.vertical + gap + 4f;
-
-            return Mathf.Min(count * row + chrome, cap);
-        }
-
         private void VoiceSlider()
         {
-            GUILayout.Label("声質", GUILayout.Width(38f));
-            float shown = Mathf.Clamp(_state.VoiceRate * 100f, SliderRange.VoiceMin, SliderRange.VoiceMax);
-            float next = GUILayout.HorizontalSlider(shown, SliderRange.VoiceMin, SliderRange.VoiceMax,
-                                                    GUILayout.Width(SliderW));
+            GUILayout.Label(LC("声質"), GUILayout.Width(_labelW));
+            float min = SliderRange.VoiceMin;
+            float max = SliderRange.VoiceMax;
+            float shown = Mathf.Clamp(_state.VoiceRate * 100f, min, max);
+            float next = GUILayout.HorizontalSlider(shown, min, max, _sliderStyle, GUI.skin.horizontalSliderThumb, GUILayout.Width(_sliderW));
             if (Mathf.Abs(next - shown) > 0.001f)
             {
                 _state.VoiceRate = Mathf.Round(next) / 100f;
                 _voiceDragged = true;
             }
-            GUILayout.Label(Mathf.RoundToInt(next).ToString(), GUILayout.Width(ValueW));
+            int value = Mathf.RoundToInt(shown);
+            string text = GUILayout.TextField(value.ToString(), _valueStyle, GUILayout.Width(ValueW));
+            if (int.TryParse(text, out int newValue) && newValue != value && newValue >= min && newValue <= max)
+            {
+                _state.VoiceRate = newValue / 100f;
+                _voiceDragged = true;
+            }
         }
 
         private int Stat(string label, int value)
         {
-            GUILayout.Label(label, GUILayout.Width(LabelW));
+            GUILayout.Label(label, GUILayout.Width(_labelW));
             float min = SliderRange.StatMin;
             float max = SliderRange.StatMax;
             float v = Mathf.Clamp(value, min, max);
-            v = GUILayout.HorizontalSlider(v, min, max, GUILayout.Width(SliderW));
+            v = GUILayout.HorizontalSlider(v, min, max, _sliderStyle, GUI.skin.horizontalSliderThumb, GUILayout.Width(_sliderW));
             int result = Mathf.RoundToInt(v);
-            GUILayout.Label(result.ToString(), GUILayout.Width(ValueW));
+            string text = GUILayout.TextField(result.ToString(), _valueStyle, GUILayout.Width(ValueW));
+            if (int.TryParse(text, out int newValue) && newValue != result && newValue >= min && newValue <= max)
+                result = newValue;
             return result;
         }
 
@@ -640,32 +765,33 @@ namespace HS2CharaParamEditor
             OptionList list = CurrentList();
             if (list == null || list.Count == 0)
             {
-                GUILayout.Label("選択肢がありません");
+                GUILayout.Label(LC("選択肢がありません"));
                 return;
             }
 
             _popupScroll = GUILayout.BeginScrollView(_popupScroll);
-            for (int i = 0; i < list.Count; i++)
+            int selected = list.IndexOfValue(GetCurrentValue());
+            int index = GUILayout.SelectionGrid(selected, list.Labels, 1, _dropdownButtonStyle);
+            if (index != selected)
             {
-                if (GUILayout.Button(list.Labels[i]))
-                {
-                    SetCurrentValue(list.Values[i]);
-                    _openDropdown = -1;
-                   
-                }
+                SetCurrentValue(list.Values[index]);
+                DestroyDropdown();
             }
             GUILayout.EndScrollView();
         }
 
         private void CloseDropdownIfClickedOutside()
         {
-            if (_openDropdown < 0)
+            if (!_dropdownVisible || !Input.GetMouseButtonDown(0))
                 return;
-            if (Event.current == null || Event.current.type != EventType.MouseDown)
+            Vector2 m = Input.mousePosition;
+            m.y = Screen.height - m.y;
+            if (_popupRect.Contains(m))
                 return;
-            Vector2 m = Event.current.mousePosition;
-            if (!_popupRect.Contains(m) && !_rect.Contains(m))
-                _openDropdown = -1;
+            int dropdownId = _openDropdown;
+            DestroyDropdown();
+            if (dropdownId >= 0 && dropdownId < DdCount && _ddAnchors[dropdownId].Contains(m - _rect.position))
+                _openDropdown = dropdownId;
         }
 
         private OptionList CurrentList()
@@ -679,6 +805,20 @@ namespace HS2CharaParamEditor
                 case DdState: return NameSources.NowState;
                 case DdLobbyEvent: return _eventChoices;
                 default: return null;
+            }
+        }
+
+        private int GetCurrentValue()
+        {
+            switch (_openDropdown)
+            {
+                case DdPersonality: return _state.Personality;
+                case DdTrait: return _state.Trait;
+                case DdMind: return _state.Mind;
+                case DdHAttribute: return _state.HAttribute;
+                case DdState: return _state.NowState;
+                case DdLobbyEvent: return _eventChoice;
+                default: return -1;
             }
         }
 

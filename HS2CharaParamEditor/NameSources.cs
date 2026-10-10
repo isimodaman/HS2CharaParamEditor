@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -22,7 +23,7 @@ namespace HS2CharaParamEditor
         internal string LabelOfValue(int value)
         {
             int i = IndexOfValue(value);
-            return i >= 0 ? Labels[i] : value + " (未定義)";
+            return i >= 0 ? Labels[i] : LC("{0} (未定義)", value);
         }
     }
 
@@ -72,7 +73,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning(which + " を取得できません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("{0} を取得できません: ", which) + ex.Message);
             }
             return null;
         }
@@ -111,10 +112,10 @@ namespace HS2CharaParamEditor
                         }
 
                         string label = null;
-                        try { label = prm.Get(lang); }
+                        try { label = LC(prm.Get(lang)); }
                         catch (Exception) { }
                         if (string.IsNullOrEmpty(label))
-                            label = prm.Personality;
+                            label = LC(prm.Personality);
 
                         if (IsMergedAway(label))
                         {
@@ -128,11 +129,11 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("Manager.Voice.infoTable を取得できません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("Manager.Voice.infoTable を取得できません: ") + ex.Message);
             }
 
             if (dropped > 0)
-                Plugin.Log.LogInfo("性格の選択肢から " + dropped + " 件を除外しました（バニラ非表示分）。");
+                Plugin.Log.LogInfo(LC("性格の選択肢から {0} 件を除外しました（バニラ非表示分）。", dropped));
 
             return Build("性格", list.Count > 0 ? list : null);
         }
@@ -167,16 +168,19 @@ namespace HS2CharaParamEditor
 
             if (table != null)
             {
+                string prefix = label + ':';
                 foreach (KeyValuePair<int, string> kv in table)
                 {
                     values.Add(kv.Key);
-                    labels.Add(string.IsNullOrEmpty(kv.Value) ? kv.Key.ToString() : kv.Value);
+                    string format = string.IsNullOrEmpty(kv.Value) ? kv.Key.ToString() : kv.Value;
+                    labels.Add(LC(new string[] { prefix + format, format }));
                 }
             }
 
+            label = LC(label);
             if (values.Count == 0)
             {
-                Plugin.Log.LogWarning(label + " の名称テーブルが空のため、番号のみの選択肢にします。");
+                Plugin.Log.LogWarning(LC("{0} の名称テーブルが空のため、番号のみの選択肢にします。", label));
                 for (int i = 0; i < 32; i++)
                 {
                     values.Add(i);
@@ -202,8 +206,10 @@ namespace HS2CharaParamEditor
                 list.Labels[i] = labels[order[i]];
             }
 
-            Plugin.Log.LogInfo(label + " の選択肢を " + list.Count + " 件読み込みました"
-                               + (list.FromGame ? "" : "（フォールバック）") + "。");
+            Plugin.Log.LogInfo(LC("{0} の選択肢を {0} 件読み込みました。{2}",
+                label,
+                list.Count,
+                list.FromGame ? "" : LC("（フォールバック）")));
             return list;
         }
     }

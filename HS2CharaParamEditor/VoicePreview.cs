@@ -1,7 +1,8 @@
+using AIChara;
 using System;
 using System.Collections.Generic;
-using AIChara;
 using UnityEngine;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -65,12 +66,12 @@ namespace HS2CharaParamEditor
                     return;
 
                 if (!PlayOne(personality, prm.samplebundle, prm.sampleasset, pitch))
-                    Plugin.Log.LogWarning("試聴の再生元を取得できませんでした: "
+                    Plugin.Log.LogWarning(LC("試聴の再生元を取得できませんでした: ")
                                           + prm.samplebundle + " / " + prm.sampleasset);
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("サンプルボイスの再生に失敗しました: " + ex.Message);
+                Plugin.Log.LogWarning(LC("サンプルボイスの再生に失敗しました: ") + ex.Message);
             }
         }
 
@@ -135,7 +136,7 @@ namespace HS2CharaParamEditor
 
             _playing = src;
             if (Logged.Add(personality))
-                Plugin.Log.LogInfo("試聴音源: 性格 " + personality + " → " + bundle + " / " + asset);
+                Plugin.Log.LogInfo(LC("試聴音源: 性格 {0} → {1} / {2}", personality, bundle, asset));
             return true;
         }
 

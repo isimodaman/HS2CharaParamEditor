@@ -1,10 +1,11 @@
-using System;
-using System.IO;
-using System.Reflection;
 using Actor;
 using AIChara;
 using GameLoadCharaFileSystem;
 using HS2;
+using System;
+using System.IO;
+using System.Reflection;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -25,7 +26,7 @@ namespace HS2CharaParamEditor
             {
                 Manager.LobbySceneManager mgr = TargetResolver.Manager_;
                 if (mgr == null)
-                    return "ロビー未初期化";
+                    return LC("ロビー未初期化");
                 if (mgr.heroines == null)
                     return "heroines = null";
 
@@ -33,12 +34,14 @@ namespace HS2CharaParamEditor
                 for (int i = 0; i < mgr.heroines.Length; i++)
                     if (mgr.heroines[i] != null)
                         filled++;
-                return "枠 " + mgr.heroines.Length + " / 在席 " + filled
-                       + " / ゲーム側の選択枠 " + TargetResolver.GameActiveSlot;
+                return LC("枠 {0} / 在席 {1} / ゲーム側の選択枠 {2}",
+                    mgr.heroines.Length,
+                    filled,
+                    TargetResolver.GameActiveSlot);
             }
             catch (Exception ex)
             {
-                return "取得失敗: " + ex.Message;
+                return LC("取得失敗: ") + ex.Message;
             }
         }
 
@@ -48,7 +51,7 @@ namespace HS2CharaParamEditor
 
             if (target == null || target.File == null)
             {
-                message = "編集対象がありません。";
+                message = LC("編集対象がありません。");
                 return false;
             }
 
@@ -56,11 +59,13 @@ namespace HS2CharaParamEditor
             if (state.StateEditedByHand && !state.LockNowState)
             {
                 state.LockNowState = true;
-                Plugin.Log.LogInfo("状態を手動変更したため、状態ロックを自動で有効にしました。");
+                Plugin.Log.LogInfo(LC("状態を手動変更したため、状態ロックを自動で有効にしました。"));
             }
 
             state.ApplyTo(target.File);
-            Plugin.Log.LogInfo("適用（" + (target.IsLive ? "実体+カード" : "カードのみ") + "）: " + state.Summary());
+            Plugin.Log.LogInfo(LC("適用（{0}）: {1}",
+                LC(target.IsLive ? "実体+カード" : "カードのみ"),
+                state.Summary()));
 
             // 状態の再計算。ロックが立っていれば手動値が保たれる。
             try
@@ -72,7 +77,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("CalcState の呼び出しに失敗しました: " + ex.Message);
+                Plugin.Log.LogWarning(LC("CalcState の呼び出しに失敗しました: ") + ex.Message);
             }
 
             if (target.IsLive)
@@ -85,9 +90,9 @@ namespace HS2CharaParamEditor
             RefreshInfo(target);
             RefreshLobbyUI(target);
 
-            message = cardSaved
+            message = LC(cardSaved
                 ? (target.IsLive ? "適用してカードにも保存しました。" : "カードに保存しました。")
-                : "ゲーム内に適用しました。";
+                : "ゲーム内に適用しました。");
             return true;
         }
 
@@ -98,7 +103,7 @@ namespace HS2CharaParamEditor
                 string name = target.CardPath;
                 if (string.IsNullOrEmpty(name))
                 {
-                    Plugin.Log.LogWarning("保存先のファイル名が空のため保存を見送りました。");
+                    Plugin.Log.LogWarning(LC("保存先のファイル名が空のため保存を見送りました。"));
                     return false;
                 }
 
@@ -107,12 +112,12 @@ namespace HS2CharaParamEditor
 
                 bool ok = target.File.SaveCharaFile(name, SexFromCard, false);
                 if (!ok)
-                    Plugin.Log.LogWarning("カードの保存に失敗しました。");
+                    Plugin.Log.LogWarning(LC("カードの保存に失敗しました。"));
                 return ok;
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogError("カード保存で例外: " + ex);
+                Plugin.Log.LogError(LC("カード保存で例外: ") + ex);
                 return false;
             }
         }
@@ -132,11 +137,11 @@ namespace HS2CharaParamEditor
                     return;
 
                 File.Copy(path, backup);
-                Plugin.Log.LogInfo("バックアップを作成しました: " + backup);
+                Plugin.Log.LogInfo(LC("バックアップを作成しました: ") + backup);
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("バックアップの作成に失敗しました: " + ex.Message);
+                Plugin.Log.LogWarning(LC("バックアップの作成に失敗しました: ") + ex.Message);
             }
         }
 
@@ -148,11 +153,11 @@ namespace HS2CharaParamEditor
         {
             if (VoiceCacheField == null)
             {
-                Plugin.Log.LogWarning("cachedVoiceNo が見つかりません。ボイスの更新が遅れる可能性があります。");
+                Plugin.Log.LogWarning(LC("cachedVoiceNo が見つかりません。ボイスの更新が遅れる可能性があります。"));
                 return;
             }
             try { VoiceCacheField.SetValue(heroine, null); }
-            catch (Exception ex) { Plugin.Log.LogWarning("ボイスキャッシュのクリアに失敗: " + ex.Message); }
+            catch (Exception ex) { Plugin.Log.LogWarning(LC("ボイスキャッシュのクリアに失敗: ") + ex.Message); }
         }
 
         /// <summary>一覧のサムネ横に出ている表示情報を更新する。</summary>
@@ -185,7 +190,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("一覧表示の更新に失敗: " + ex.Message);
+                Plugin.Log.LogWarning(LC("一覧表示の更新に失敗: ") + ex.Message);
             }
         }
 
@@ -211,7 +216,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("ロビー表示の更新に失敗しました: " + ex.Message);
+                Plugin.Log.LogWarning(LC("ロビー表示の更新に失敗しました: ") + ex.Message);
             }
         }
     }

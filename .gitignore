@@ -7,6 +7,9 @@ obj/
 # Visual Studio
 .vs/
 
+# NuGet（復元で作られる。コミットしない）
+packages/
+
 # 配布用の書庫。Releases の添付と外部アップローダで配るので、リポジトリには入れない。
 # Releases の添付ファイルはリポジトリ本体とは別管理なので、無視していても配れる。
 release/*.zip

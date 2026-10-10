@@ -1,5 +1,6 @@
-using System;
 using AIChara;
+using System;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -92,7 +93,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogError("パラメータの読み取りに失敗しました: " + ex);
+                Plugin.Log.LogError(LC("パラメータの読み取りに失敗しました: ") + ex);
             }
         }
 

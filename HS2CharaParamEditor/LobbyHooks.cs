@@ -1,7 +1,7 @@
-using System;
 using HarmonyLib;
 using HS2;
-using UnityEngine;
+using System;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -10,8 +10,7 @@ namespace HS2CharaParamEditor
     /// </summary>
     internal static class LobbyHooks
     {
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Manager.LobbySceneManager), "Start")]
+        [HarmonyPostfix, HarmonyPatch(typeof(Manager.LobbySceneManager), nameof(Manager.LobbySceneManager.Start))]
         private static void LobbySceneManagerStart(Manager.LobbySceneManager __instance)
         {
             try
@@ -23,19 +22,17 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogError("パネルの生成に失敗しました: " + ex);
+                Plugin.Log.LogError(LC("パネルの生成に失敗しました: ") + ex);
             }
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(LobbySelectUI), "ItemSelectAction")]
+        [HarmonyPostfix, HarmonyPatch(typeof(LobbySelectUI), nameof(LobbySelectUI.ItemSelectAction))]
         private static void ItemSelectAction(int __0)
         {
             LobbyPanel.NotifySelected(__0);
         }
 
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(LobbySelectUI), "SetEntryCharaNo")]
+        [HarmonyPostfix, HarmonyPatch(typeof(LobbySelectUI), nameof(LobbySelectUI.SetEntryCharaNo))]
         private static void SetEntryCharaNo(int __0)
         {
             LobbyPanel.NotifySelected(__0);
@@ -47,8 +44,7 @@ namespace HS2CharaParamEditor
         /// バニラ右側のパラメータパネルが消えるのと同じタイミングなので、
         /// こちらのパネルもそれに追随させる。
         /// </summary>
-        [HarmonyPostfix]
-        [HarmonyPatch(typeof(Manager.LobbySceneManager), "SetModeCanvasGroup")]
+        [HarmonyPostfix, HarmonyPatch(typeof(Manager.LobbySceneManager), nameof(Manager.LobbySceneManager.SetModeCanvasGroup))]
         private static void SetModeCanvasGroup(int __0)
         {
             LobbyPanel.NotifyMode(__0);

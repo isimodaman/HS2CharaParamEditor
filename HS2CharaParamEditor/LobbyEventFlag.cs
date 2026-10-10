@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -68,13 +69,13 @@ namespace HS2CharaParamEditor
         {
             switch (eventID)
             {
-                case Bath: return "風呂（入浴）";
-                case Shower: return "シャワー";
-                case ToiletJp: return "トイレ（和式）";
-                case ToiletWest: return "トイレ（洋式）";
-                case Sleep: return "睡眠";
+                case Bath: return LC("風呂（入浴）");
+                case Shower: return LC("シャワー");
+                case ToiletJp: return LC("トイレ（和式）");
+                case ToiletWest: return LC("トイレ（洋式）");
+                case Sleep: return LC("睡眠");
             }
-            return eventID < 0 ? "なし" : "その他 (" + eventID + ")";
+            return eventID < 0 ? LC("なし") : LC("その他 ({0})", eventID);
         }
 
         /// <summary>
@@ -90,15 +91,15 @@ namespace HS2CharaParamEditor
             if (currentID >= 0 && !IsKnown(currentID))
             {
                 values.Add(currentID);
-                labels.Add("そのまま (" + currentID + ")");
+                labels.Add(LC("そのまま ({0})", currentID));
             }
 
-            values.Add(None); labels.Add("なし");
-            values.Add(Bath); labels.Add("風呂（入浴）");
-            values.Add(Shower); labels.Add("シャワー");
-            values.Add(ToiletJp); labels.Add("トイレ（和式）");
-            values.Add(ToiletWest); labels.Add("トイレ（洋式）");
-            values.Add(Sleep); labels.Add("睡眠");
+            values.Add(None); labels.Add(LC("なし"));
+            values.Add(Bath); labels.Add(LC("風呂（入浴）"));
+            values.Add(Shower); labels.Add(LC("シャワー"));
+            values.Add(ToiletJp); labels.Add(LC("トイレ（和式）"));
+            values.Add(ToiletWest); labels.Add(LC("トイレ（洋式）"));
+            values.Add(Sleep); labels.Add(LC("睡眠"));
 
             OptionList list = new OptionList();
             list.Values = values.ToArray();
@@ -174,7 +175,7 @@ namespace HS2CharaParamEditor
             Manager.LobbySceneManager mgr = TargetResolver.Manager_;
             if (mgr == null)
             {
-                result.Reason = "ロビーが未初期化です。";
+                result.Reason = LC("ロビーが未初期化です。");
                 return result;
             }
 
@@ -187,7 +188,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("heroineRommListIdx を参照できません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("heroineRommListIdx を参照できません: ") + ex.Message);
             }
 
             string name = NameOf(target);
@@ -196,7 +197,7 @@ namespace HS2CharaParamEditor
             if (result.RoomIndex < 0 && !string.IsNullOrEmpty(name))
             {
                 try { result.RoomIndex = SaveData.FindInRoomListIndex(name); }
-                catch (Exception ex) { Plugin.Log.LogWarning("FindInRoomListIndex が使えません: " + ex.Message); }
+                catch (Exception ex) { Plugin.Log.LogWarning(LC("FindInRoomListIndex が使えません: ") + ex.Message); }
             }
 
             List<string> room = RoomList();
@@ -226,7 +227,7 @@ namespace HS2CharaParamEditor
 
             if (!result.Valid)
             {
-                result.Reason = "枠が未確定です。キャラを枠に入れてから設定してください。";
+                result.Reason = LC("枠が未確定です。キャラを枠に入れてから設定してください。");
                 DumpRoomList(name, room);
             }
 
@@ -238,10 +239,11 @@ namespace HS2CharaParamEditor
             try
             {
                 string entries = room == null
-                    ? "(部屋リストを参照できません)"
+                    ? LC("(部屋リストを参照できません)")
                     : string.Join(" / ", room.ToArray());
-                Plugin.Log.LogInfo("部屋番号を解決できません。探した名前=" + (name ?? "(なし)")
-                                   + " / 部屋リスト=" + entries);
+                Plugin.Log.LogInfo(LC("部屋番号を解決できません。探した名前={0} / 部屋リスト={1}",
+                    name ?? LC("(なし)"),
+                    entries));
             }
             catch (Exception) { }
         }
@@ -267,7 +269,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("eventNos を読めません: " + ex.Message);
+                Plugin.Log.LogWarning(LC("eventNos を読めません: ") + ex.Message);
             }
             return None;
         }
@@ -282,38 +284,40 @@ namespace HS2CharaParamEditor
             Target t = Resolve(slot, target);
             if (!t.Valid)
             {
-                message = "待ち合わせイベント: " + (t.Reason ?? "設定先を特定できません。");
+                message = LC("待ち合わせイベント: ") + (t.Reason ?? LC("設定先を特定できません。"));
                 return false;
             }
 
             if (eventID >= 0 && !EventTable.Exists(eventID))
             {
-                message = "待ち合わせイベント: イベント " + eventID + " がこの環境にありません。";
+                message = LC("待ち合わせイベント: イベント {0} がこの環境にありません。", eventID);
                 return false;
             }
 
             Manager.LobbySceneManager mgr = TargetResolver.Manager_;
             if (mgr == null || mgr.eventNos == null)
             {
-                message = "待ち合わせイベント: eventNos が未初期化です。";
+                message = LC("待ち合わせイベント: eventNos が未初期化です。");
                 return false;
             }
             if (t.RoomIndex >= mgr.eventNos.Length)
             {
-                message = "待ち合わせイベント: 部屋番号 " + t.RoomIndex + " が範囲外です。";
+                message = LC("待ち合わせイベント: 部屋番号 {0} が範囲外です。", t.RoomIndex);
                 return false;
             }
 
             mgr.eventNos[t.RoomIndex] = eventID;
             SyncTables(t.Key, eventID);
 
-            Plugin.Log.LogInfo("待ち合わせイベントを " + Describe(eventID) + " に設定しました"
-                               + "（枠 " + (slot + 1) + " / 部屋 " + t.RoomIndex
-                               + " / キー " + (t.Key ?? "(なし)") + "）。");
+            Plugin.Log.LogInfo(LC("待ち合わせイベントを {0} に設定しました（枠 {1} / 部屋 {2} / キー {3}）。",
+                Describe(eventID),
+                slot + 1,
+                t.RoomIndex,
+                t.Key ?? LC("(なし)")));
 
             message = slot == EffectiveSlot
-                ? "待ち合わせイベントを " + Describe(eventID) + " にしました。"
-                : "待ち合わせイベントを " + Describe(eventID) + " にしました（マップ選択に効くのは1人目です）。";
+                ? LC("待ち合わせイベントを {0} にしました。", Describe(eventID))
+                : LC("待ち合わせイベントを {0} にしました（マップ選択に効くのは1人目です）。", Describe(eventID));
             return true;
         }
 
@@ -369,7 +373,7 @@ namespace HS2CharaParamEditor
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("イベント表の同期に失敗（動作自体には影響しません）: " + ex.Message);
+                Plugin.Log.LogWarning(LC("イベント表の同期に失敗（動作自体には影響しません）: ") + ex.Message);
             }
         }
     }

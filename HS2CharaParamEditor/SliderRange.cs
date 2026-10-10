@@ -1,6 +1,7 @@
-using System;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
+using System;
+using static HS2CharaParamEditor.ConfigLanguage.Localize;
 
 namespace HS2CharaParamEditor
 {
@@ -29,7 +30,7 @@ namespace HS2CharaParamEditor
                 BepInEx.PluginInfo info;
                 if (!Chainloader.PluginInfos.TryGetValue(SliderUnlockerGuid, out info) || info.Instance == null)
                 {
-                    Plugin.Log.LogInfo("SliderUnlocker が見つからないため、声質の範囲は 0-100 とします。");
+                    Plugin.Log.LogInfo(LC("SliderUnlocker が見つからないため、声質の範囲は 0-100 とします。"));
                     return;
                 }
 
@@ -42,16 +43,16 @@ namespace HS2CharaParamEditor
 
                 if (VoiceMax <= VoiceMin)
                 {
-                    Plugin.Log.LogWarning("SliderUnlocker の値が不正のため、声質の範囲を 0-100 に戻します。");
+                    Plugin.Log.LogWarning(LC("SliderUnlocker の値が不正のため、声質の範囲を 0-100 に戻します。"));
                     VoiceMin = 0f;
                     VoiceMax = 100f;
                 }
 
-                Plugin.Log.LogInfo("声質の範囲を " + VoiceMin + " - " + VoiceMax + " に設定しました。");
+                Plugin.Log.LogInfo(LC("声質の範囲を {0} - {1} に設定しました。", VoiceMin, VoiceMax));
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning("SliderUnlocker の設定を読めませんでした: " + ex.Message);
+                Plugin.Log.LogWarning(LC("SliderUnlocker の設定を読めませんでした: ") + ex.Message);
                 VoiceMin = 0f;
                 VoiceMax = 100f;
             }

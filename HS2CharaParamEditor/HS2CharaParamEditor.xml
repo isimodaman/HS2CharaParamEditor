@@ -1,0 +1,247 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<HS2CharaParamEditor>
+
+  <!-- language type: UnityEngine.SystemLanguage -->
+  <localize language="English">
+
+    <!-- HS2CharaParamEditor.Applier -->
+    <replace target="ロビー未初期化" value="Lobby not initialized" />
+    <replace target="枠 {0} / 在席 {1} / ゲーム側の選択枠 {2}" value="Slot {0} / Occupied {1} / Game-side selection slot {2}" />
+    <replace target="取得失敗: " value="Retrieval failed: " />
+    <replace target="編集対象がありません。" value="No item selected for editing." />
+    <replace target="状態を手動変更したため、状態ロックを自動で有効にしました。" value="Status lock automatically enabled due to manual status change." />
+    <replace target="適用（{0}）: {1}" value="Applied ({0}): {1}" />
+    <replace target="実体+カード" value="Entity + Card" />
+    <replace target="カードのみ" value="Card only" />
+    <replace target="CalcState の呼び出しに失敗しました: " value="Failed to call CalcState: " />
+    <replace target="適用してカードにも保存しました。" value="Applied and saved to card." />
+    <replace target="カードに保存しました。" value="Saved to card." />
+    <replace target="ゲーム内に適用しました。" value="Applied in-game." />
+    <replace target="保存先のファイル名が空のため保存を見送りました。" value="Save aborted because the destination filename is empty." />
+    <replace target="カードの保存に失敗しました。" value="Failed to save card." />
+    <replace target="カード保存で例外: " value="Exception during card save: " />
+    <replace target="バックアップを作成しました: " value="Backup created: " />
+    <replace target="バックアップの作成に失敗しました: " value="Failed to create backup: " />
+    <replace target="cachedVoiceNo が見つかりません。ボイスの更新が遅れる可能性があります。" value="cachedVoiceNo not found. Voice update may be delayed." />
+    <replace target="ボイスキャッシュのクリアに失敗: " value="Failed to clear voice cache: " />
+    <replace target="一覧表示の更新に失敗: " value="Failed to update list display: " />
+    <replace target="ロビー表示の更新に失敗しました: " value="Failed to update lobby display: " />
+
+    <!-- HS2CharaParamEditor.TargetResolver -->
+    <replace target="scrollCtrl を取得できません: " value="Could not retrieve scrollCtrl: " />
+    <replace target="情報パネルの表示対象を取得できません: " value="Could not retrieve target for info panel: " />
+    <replace target="一覧の選択情報を取得できません: " value="Could not retrieve list selection info: " />
+    <replace target="枠 {0} の参照に失敗: " value="Failed to reference slot {0}: " />
+    <replace target="カードを読めませんでした: " value="Could not read card: " />
+    <replace target="カードを読み込みました: " value="Card loaded: " />
+    <replace target="カード読み込みで例外: " value="Exception during card load: " />
+
+    <!-- HS2CharaParamEditor.LobbyEventFlag -->
+    <replace target="風呂（入浴）" value="Bath" />
+    <replace target="シャワー" value="Shower" />
+    <replace target="トイレ（和式）" value="ToiletJp" />
+    <replace target="トイレ（洋式）" value="ToiletWest" />
+    <replace target="睡眠" value="Sleep" />
+    <replace target="なし" value="None" />
+    <replace target="その他 ({0})" value="Other ({0})" />
+    <replace target="そのまま ({0})" value="As is ({0})" />
+    <replace target="ロビーが未初期化です。" value="The lobby is uninitialized." />
+    <replace target="heroineRommListIdx を参照できません: " value="Cannot access heroineRommListIdx: " />
+    <replace target="FindInRoomListIndex が使えません: " value="Cannot use FindInRoomListIndex: " />
+    <replace target="枠が未確定です。キャラを枠に入れてから設定してください。" value="The slot is not yet determined. Please assign a character to the slot before configuring settings." />
+    <replace target="(部屋リストを参照できません)" value="(Cannot access room list)" />
+    <replace target="部屋番号を解決できません。探した名前={0} / 部屋リスト={1}" value="Cannot resolve room number. Searched name={0} / Room list={1}" />
+    <replace target="(なし)" value="(None)" />
+    <replace target="eventNos を読めません: " value="Cannot read eventNos: " />
+    <replace target="待ち合わせイベント: " value="Rendezvous event: " />
+    <replace target="設定先を特定できません。" value="Cannot identify the target for configuration." />
+    <replace target="待ち合わせイベント: イベント {0} がこの環境にありません。" value="Rendezvous event: Event {0} does not exist in this environment." />
+    <replace target="待ち合わせイベント: eventNos が未初期化です。" value="Rendezvous event: eventNos is uninitialized." />
+    <replace target="待ち合わせイベント: 部屋番号 {0} が範囲外です。" value="Rendezvous event: Room number {0} is out of range." />
+    <replace target="待ち合わせイベントを {0} に設定しました（枠 {1} / 部屋 {2} / キー {3}）。" value="Set rendezvous event to {0} (Slot {1} / Room {2} / Key {3})." />
+    <replace target="待ち合わせイベントを {0} にしました。" value="Set rendezvous event to {0}." />
+    <replace target="待ち合わせイベントを {0} にしました（マップ選択に効くのは1人目です）。" value="Set rendezvous event to {0} (only the first person affects map selection)." />
+    <replace target="イベント表の同期に失敗（動作自体には影響しません）: " value="Failed to synchronize the event table (this does not affect actual gameplay): " />
+
+    <!-- HS2CharaParamEditor.LobbyHooks -->
+    <replace target="パネルの生成に失敗しました: " value="Failed to generate the panel: " />
+
+    <!-- HS2CharaParamEditor.LobbyPanel -->
+    <replace target="待ち合わせ画面にパネルを生成しました。" value="Generated a panel on the waiting screen." />
+    <replace target="枠 {0} が未割り当てのため、パネルを表示しません。（{1}）" value="Slot {0} is unassigned, so the panel will not be displayed. ({1})" />
+    <replace target="枠 {0} → {1}（{2}）" value="Slot {0} → {1} ({2})" />
+    <replace target="枠の読み込みに失敗しました: " value="Failed to load slot: " />
+    <replace target="マップ選択に効くのは1人目のフラグです。" value="Map selection is determined by the first person's flag." />
+    <replace target="取得に失敗: " value="Failed to retrieve: " />
+    <replace target="(名前なし)" value="(No name)" />
+    <replace target="実体" value="Entity" />
+    <replace target="カード" value="Card" />
+
+    <replace target="プロフィール" value="Profile" />
+    <replace target="名前" value="Name" />
+    <replace target="性格" value="Personality" />
+
+    <replace target="メンタル" value="Mindset" />
+    <replace target="特性" value="Trait" />
+    <replace target="心情" value="Mentality" />
+    <replace target="H属性" value="Sex Trait" />
+
+    <replace target="ステータス" value="Stats" />
+    <replace target="好感度" value="Favor" />
+    <replace target="嫌悪" value="Hate" />
+    <replace target="従順度" value="Slavery" />
+    <replace target="依存" value="Depend" />
+    <replace target="悦び" value="Enjoy" />
+    <replace target="破綻" value="Broken" />
+
+    <replace target="欲求" value="Desire" />
+    <replace target="汚れ" value="Dirty" />
+    <replace target="尿意" value="Toilet" />
+    <replace target="疲労" value="Tired" />
+    <replace target="性欲" value="Libido" />
+
+    <replace target="状態" value="Status" />
+    <replace target="固定" value="Fixed" />
+    <replace target="状態を手動変更しています。適用時に固定が自動で入ります。" value="The state is being changed manually. The &quot;Fixed&quot; setting is automatically applied upon confirmation." />
+
+    <replace target="待ち合わせイベント" value="Meeting Event" />
+    <replace target="現在" value="Current" />
+    <replace target="設定" value="Settings" />
+
+    <replace target="カードにも保存" value="Save to card" />
+    <replace target="上限解除" value="Unlock limits" />
+    <replace target="読み直す" value="Reload" />
+    <replace target="現在の値を読み直しました。" value="Reloaded current values." />
+    <replace target="適用" value="Apply" />
+
+    <replace target="1人目" value="1st girl" />
+    <replace target="2人目" value="2nd girl" />
+    <replace target="3人目" value="3rd girl" />
+    <replace target="{0}人目" value="{0}th girl" />
+    <replace target="声質" value="Voice" />
+    <replace target="選択肢がありません" value="No options available" />
+
+    <!-- HS2CharaParamEditor.OptionList -->
+    <replace target="{0} (未定義)" value="{0} (Undefined)" />
+
+    <!-- HS2CharaParamEditor.NameSources -->
+    <replace target="{0} を取得できません: " value="Cannot retrieve {0}: " />
+    <replace target="フュル" value="Fur" />
+    <replace target="シトリー" value="Sitri" />
+    <replace target="Manager.Voice.infoTable を取得できません: " value="Cannot retrieve Manager.Voice.infoTable: " />
+    <replace target="性格の選択肢から {0} 件を除外しました（バニラ非表示分）。" value="Excluded {0} items from personality options (hidden vanilla items)." />
+
+    <!-- HS2CharaParamEditor.NameSources: 性格 (Manager.Voice.infoTable) -->
+    <replace target="性格:クール" value="Composed" />
+    <replace target="性格:普通" value="Normal" />
+    <replace target="性格:苦労人" value="Hardworking" />
+    <replace target="性格:女友達" value="Girlfriend" />
+    <replace target="性格:ギャル" value="Fashionable" />
+    <replace target="性格:気弱" value="Timid" />
+    <replace target="性格:母性的" value="Motherly" />
+    <replace target="性格:ドS" value="Sadistic" />
+    <replace target="性格:オープン" value="Open-Minded" />
+    <replace target="性格:天然" value="Airhead" />
+    <replace target="性格:几帳面" value="Careful" />
+    <replace target="性格:大和撫子" value="Ideal Japanese" />
+    <replace target="性格:ボーイッシュ" value="Tomboy" />
+    <replace target="性格:ヤンデレ" value="Obsessed" />
+
+    <!-- HS2CharaParamEditor.NameSources: 特性 (Manager.Game.infoTraitTable) -->
+    <replace target="特性:なし" value="None" />
+    <replace target="特性:綺麗好き" value="Clean Lover" />
+    <replace target="特性:ものぐさ" value="Lazy" />
+    <replace target="特性:虚弱" value="Fragile" />
+    <replace target="特性:タフネス" value="Tough" />
+    <replace target="特性:頻尿" value="Weak Bladder" />
+    <replace target="特性:我慢強い" value="Patient" />
+    <replace target="特性:グラスハート" value="Glass Heart" />
+    <replace target="特性:不屈の精神" value="Brave" />
+    <replace target="特性:欲求不満" value="Perverted" />
+    <replace target="特性:自制心" value="Self-Control" />
+    <replace target="特性:思うがまま" value="At will" />
+    <replace target="特性:感受性豊か" value="Sensitive" />
+
+    <!-- HS2CharaParamEditor.NameSources: 心情 (Manager.Game.infoMindTable) -->
+    <replace target="心情:なし" value="None" />
+    <replace target="心情:気になる" value="Curious" />
+    <replace target="心情:好きかも" value="Affectionate" />
+    <replace target="心情:一目惚れ" value="Lovestruck" />
+    <replace target="心情:話づらい" value="Awkward" />
+    <replace target="心情:苦手" value="Reluctant" />
+    <replace target="心情:嫌い" value="Loathing" />
+    <replace target="心情:指示されたい" value="Cooperative" />
+    <replace target="心情:命令されたい" value="Obedient" />
+    <replace target="心情:逆らえない" value="Submissive" />
+    <replace target="心情:楽しい" value="Interested" />
+    <replace target="心情:苛めたい" value="Charmed" />
+    <replace target="心情:服従させたい" value="Aroused" />
+
+    <!-- HS2CharaParamEditor.NameSources: H属性 (Manager.Game.infoHAttributeTable) -->
+    <replace target="H属性:なし" value="None" />
+    <replace target="H属性:性欲旺盛" value="Horny" />
+    <replace target="H属性:S" value="Sadist" />
+    <replace target="H属性:M" value="Masochist" />
+    <replace target="H属性:胸が敏感" value="Sensitive Breasts" />
+    <replace target="H属性:お尻が敏感" value="Sensitive Ass" />
+    <replace target="H属性:股間が敏感" value="Sensitive Pussy" />
+    <replace target="H属性:キスに弱い" value="Love Kisses" />
+    <replace target="H属性:潔癖症" value="Clean Freak" />
+    <replace target="H属性:Hに抵抗がある" value="Sex Hater" />
+    <replace target="H属性:寂しがり屋" value="Lonely" />
+
+    <!-- HS2CharaParamEditor.NameSources: 状態 (Manager.Game.infoStateTable) -->
+    <replace target="状態:普通" value="Normal" />
+    <replace target="状態:好意" value="Love" />
+    <replace target="状態:享楽" value="Hedonist" />
+    <replace target="状態:嫌悪" value="Hate" />
+    <replace target="状態:隷属" value="Slave" />
+    <replace target="状態:壊れ" value="Broken" />
+    <replace target="状態:依存" value="Dependency" />
+
+    <replace target="{0} の名称テーブルが空のため、番号のみの選択肢にします。" value="Name table {0} is empty, so using number-only options." />
+    <replace target="{0} の選択肢を {0} 件読み込みました。{2}" value="Loaded {0} options for {0}. {2}" />
+    <replace target="（フォールバック）" value="(Fallback)" />
+
+    <!-- HS2CharaParamEditor.ParamState -->
+    <replace target="パラメータの読み取りに失敗しました: " value="Failed to read parameter: " />
+
+    <!-- HS2CharaParamEditor.Plugin -->
+    <replace target="表示" value="View" />
+    <replace target="パネルを表示する" value="Show panel" />
+    <replace target="待ち合わせ画面に入ったときパネルを開きます。" value="Opens the panel when entering the meeting screen." />
+    <replace target="パネル開閉キー" value="Panel toggle key" />
+    <replace target="パネルの表示と非表示を切り替えるキーです。" value="Key to toggle panel visibility." />
+    <replace target="フォント名" value="Font name" />
+    <replace target="日本語が表示されない場合は Meiryo や MS Gothic を試してください。" value="If Japanese text does not display correctly, try Meiryo or MS Gothic." />
+    <replace target="フォントサイズ" value="Font size" />
+    <replace target="パネルの文字サイズです。" value="Text size for the panel." />
+    <replace target="保存" value="Save" />
+    <replace target="カードにも書き戻す" value="Write back to the card" />
+    <replace target="適用時にキャラカード(.png)へも保存します。オフにするとゲーム内の状態だけが変わります。" value="Saves changes to the character card (.png) when applied. If disabled, only the in-game state changes." />
+    <replace target="バックアップを作る" value="Create a backup" />
+    <replace target="カードへの初回保存時に .bak を同じフォルダに残します。" value="Saves a .bak file in the same folder upon the initial save to the card." />
+    <replace target="スライダの入力範囲を -100 から 200 に広げます。ゲームの想定外の値になるため通常は無効のままにしてください。" value="Expands the slider input range from -100 to 200. Please keep this disabled by default, as it results in values ​​outside the game's intended range." />
+    <replace target="選択肢から外す性格" value="Personalities to exclude from selection" />
+    <replace target="フュル,シトリー" value="Fur, Sitri" />
+    <replace target="バニラのキャラメイクに出てこない性格をカンマ区切りで指定します。フュルはクール、シトリーは几帳面に統合されているため既定で外しています。" value="Specify the personalities not found in the vanilla character creator, separated by commas. Fur is Composed and Sitri is Careful integrated, so I have excluded them by default." />
+    <replace target="ウィンドウ" value="Window" />
+    <replace target="拡縮" value="Scale" />
+    <replace target="位置" value="Position" />
+    <replace target="不透明度" value="Opacity" />
+    <replace target="Harmony パッチの適用に失敗しました: " value="Failed to apply Harmony patch: " />
+
+    <!-- HS2CharaParamEditor.SliderRange -->
+    <replace target="SliderUnlocker が見つからないため、声質の範囲は 0-100 とします。" value="SliderUnlocker not found, so the voice quality range is set to 0-100." />
+    <replace target="SliderUnlocker の値が不正のため、声質の範囲を 0-100 に戻します。" value="SliderUnlocker value is invalid, so the voice quality range is being reset to 0-100." />
+    <replace target="声質の範囲を {0} - {1} に設定しました。" value="Voice quality range set to {0} - {1}." />
+    <replace target="SliderUnlocker の設定を読めませんでした: " value="Could not read SliderUnlocker settings: " />
+
+    <!-- HS2CharaParamEditor.VoicePreview -->
+    <replace target="試聴の再生元を取得できませんでした: " value="Could not retrieve preview audio source: " />
+    <replace target="サンプルボイスの再生に失敗しました: " value="Failed to play sample voice: " />
+    <replace target="試聴音源: 性格 {0} → {1} / {2}" value="Preview audio: Personality {0} → {1} / {2}" />
+
+  </localize>
+
+</HS2CharaParamEditor>
