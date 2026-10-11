@@ -206,7 +206,7 @@ namespace HS2CharaParamEditor
                 list.Labels[i] = labels[order[i]];
             }
 
-            Plugin.Log.LogInfo(LC("{0} の選択肢を {0} 件読み込みました。{2}",
+            Plugin.Log.LogInfo(LC("{0} の選択肢を {1} 件読み込みました。{2}",
                 label,
                 list.Count,
                 list.FromGame ? "" : LC("（フォールバック）")));

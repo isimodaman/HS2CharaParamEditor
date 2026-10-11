@@ -7,5 +7,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("isimodaman")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 isimodaman")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("0.11.0.0")]
-[assembly: AssemblyFileVersion("0.11.0.0")]
+[assembly: AssemblyVersion("0.11.1.0")]
+[assembly: AssemblyFileVersion("0.11.1.0")]

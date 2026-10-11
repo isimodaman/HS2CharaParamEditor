@@ -200,7 +200,7 @@
     <replace target="状態:依存" value="Dependency" />
 
     <replace target="{0} の名称テーブルが空のため、番号のみの選択肢にします。" value="Name table {0} is empty, so using number-only options." />
-    <replace target="{0} の選択肢を {0} 件読み込みました。{2}" value="Loaded {0} options for {0}. {2}" />
+    <replace target="{0} の選択肢を {1} 件読み込みました。{2}" value="Loaded {1} options for {0}. {2}" />
     <replace target="（フォールバック）" value="(Fallback)" />
 
     <!-- HS2CharaParamEditor.ParamState -->
