@@ -26,10 +26,27 @@ namespace HS2CharaParamEditor
             }
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(LobbySelectUI), nameof(LobbySelectUI.ItemSelectAction))]
-        private static void ItemSelectAction(int __0)
+        /// <summary>
+        /// バニラ右側のパラメータ表示が差し替わったときに呼ばれる。
+        /// 一覧をクリックして見ている対象が変わるとここを通るので、
+        /// パネルの追従にはこの信号を使う。
+        ///
+        /// オーバーロードが2つあるので型で指定する。
+        /// GameCharaFileInfo 版が一覧のカード、ChaFileControl 版が枠の実体。
+        /// 引数は (_info, _eventNo, _entryNo) なので __2 が枠番号。
+        /// </summary>
+        [HarmonyPostfix, HarmonyPatch(typeof(LobbyParameterUI), nameof(LobbyParameterUI.SetParameter),
+            typeof(GameLoadCharaFileSystem.GameCharaFileInfo), typeof(int), typeof(int))]
+        private static void SetParameterByInfo(int __2)
         {
-            LobbyPanel.NotifySelected(__0);
+            LobbyPanel.NotifyShown(__2);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(LobbyParameterUI), nameof(LobbyParameterUI.SetParameter),
+            typeof(AIChara.ChaFileControl), typeof(int), typeof(int))]
+        private static void SetParameterByFile(int __2)
+        {
+            LobbyPanel.NotifyShown(__2);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(LobbySelectUI), nameof(LobbySelectUI.SetEntryCharaNo))]

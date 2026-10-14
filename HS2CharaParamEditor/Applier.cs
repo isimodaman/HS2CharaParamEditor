@@ -83,9 +83,10 @@ namespace HS2CharaParamEditor
             if (target.IsLive)
                 ClearVoiceCache(target.Heroine);
 
-            bool cardSaved = false;
-            if (Plugin.CfgSaveCard.Value)
-                cardSaved = SaveCard(target);
+            // 「適用&保存」に統合したので、常にカードへも書く。
+            // 名前や性格はカード側の属性なので、
+            // ここを省くと次の読み込みで元に戻る。
+            bool cardSaved = SaveCard(target);
 
             RefreshInfo(target);
             RefreshLobbyUI(target);

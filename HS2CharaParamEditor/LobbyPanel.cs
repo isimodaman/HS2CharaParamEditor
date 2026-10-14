@@ -42,6 +42,12 @@ namespace HS2CharaParamEditor
         private int _lastGameSlot = int.MinValue;
         private EditTarget _target;
         private string _charaName = string.Empty;
+        private AIChara.ChaFileControl _loadedFile;   // 直前に読み込んだ対象
+        private string _loadedName = string.Empty;    // そのときの正しい名前
+        private bool _clearFocus;                     // 次の OnGUI で入力を捨てる
+        private bool _recheck;                        // バニラ表示が変わった。次の Update で対象を見直す
+        private bool _shownLogged;
+        private ParamState _loadedState;              // 読み込んだときの値。未保存の判定用
         private bool _idleLogged;
         private bool _voiceDragged;             // 声質スライダを動かした。離した時に試聴する
         private bool _wasForeground;            // 前フレームでパネルが出ていたか
@@ -128,6 +134,23 @@ namespace HS2CharaParamEditor
                 Instance.SwitchSlot(entryNo);
         }
 
+        /// <summary>
+        /// バニラのパラメータ表示が差し替わった。
+        /// 毎フレーム来る可能性があるので、実際の確認は Update に回す。
+        /// </summary>
+        internal static void NotifyShown(int entryNo)
+        {
+            if (Instance == null)
+                return;
+            Instance._recheck = true;
+
+            // フックが割り当てられて飛んでいることを一度だけ残す。
+            if (Instance._shownLogged)
+                return;
+            Instance._shownLogged = true;
+            Plugin.Log.LogInfo(LC("バニラのパラメータ表示に追従します。（枠 {0}）", entryNo + 1));
+        }
+
         /// <summary>ロビー側の画面モードが変わった。</summary>
         internal static void NotifyMode(int mode)
         {
@@ -188,6 +211,17 @@ namespace HS2CharaParamEditor
                     _state.LoadFrom(_target.File);
                     _charaName = _target.DisplayName;
                     _idleLogged = false;
+
+                    // 対象が別のキャラになったら、入力途中の文字を捨てる。
+                    // IMGUI の TextField はフォーカスを持っている間、渡した文字列ではなく
+                    // 自前の編集バッファを返す。バッファはコントロールID に紐付いて
+                    // 生き続けるため、放っておくと前のキャラの値が state に書き戻される。
+                    // 同じキャラのまま読み直したときは捨てない（一覧を触るとここを通る）。
+                    if (!ReferenceEquals(_loadedFile, _target.File) || _slot != newSlot)
+                        _clearFocus = true;
+                    _loadedFile = _target.File;
+                    _loadedName = _state.Name;
+                    _loadedState = _state.Clone();
                     ReadEventFlag();
 
                     DestroyDropdown();
@@ -204,6 +238,8 @@ namespace HS2CharaParamEditor
                 }
 
                 _charaName = string.Empty;
+                _loadedFile = null;
+                _loadedState = null;
                 _state.Loaded = false;
                 _eventAvailable = false;
                 DestroyDropdown();
@@ -267,6 +303,12 @@ namespace HS2CharaParamEditor
         {
             FollowGameSlot();
 
+            if (_recheck)
+            {
+                _recheck = false;
+                ReloadIfChanged();
+            }
+
             if (Plugin.CfgToggleKey.Value.IsDown())
                 Plugin.CfgVisible.Value = !Plugin.CfgVisible.Value;
 
@@ -276,6 +318,27 @@ namespace HS2CharaParamEditor
             if (_wasForeground && !foreground)
                 VoicePreview.Stop();
             _wasForeground = foreground;
+        }
+
+        /// <summary>
+        /// 対象が別のキャラに変わっていたら読み直す。同じなら何もしない。
+        /// タブは動かさない（枠の切替えは FollowGameSlot の仕事）。
+        /// </summary>
+        private void ReloadIfChanged()
+        {
+            try
+            {
+                EditTarget shown = TargetResolver.Resolve(_slot);
+                if (shown == null || shown.File == null)
+                    return;
+                if (ReferenceEquals(_loadedFile, shown.File))
+                    return;
+                LoadSlot(_slot);
+            }
+            catch (Exception)
+            {
+                // ロビー初期化中。次の通知で拾う。
+            }
         }
 
         /// <summary>
@@ -324,6 +387,16 @@ namespace HS2CharaParamEditor
                 return;
             }
 
+            // LoadSlot は Update から呼ばれるので、フォーカスの解除はここまで持ち越す。
+            // 解除が間に合わず古い文字が一度書き戻されていても平気なよう、
+            // 読み込んだときの名前をここで入れ直す。
+            if (_clearFocus)
+            {
+                _clearFocus = false;
+                GUIUtility.keyboardControl = 0;
+                _state.Name = _loadedName;
+            }
+
             if (!Initialized)
             {
                 GUIStyle style = GUI.skin.label;
@@ -346,7 +419,7 @@ namespace HS2CharaParamEditor
                 _sliderW = _dropW - (DefaultDropW - DefaultSliderW);
                 _rect.width = (_labelW + _dropW) * 2f + (DefaultWindowWidth - (DefaultLabelW + DefaultDropW) * 2f);
 
-                string[] reloadApply = { "読み直す", "適用" };
+                string[] reloadApply = { "読み直す", "適用&保存" };
                 _reloadApplyW = reloadApply.Max(text => style.CalcSize(new GUIContent(LC(text))).x) + 12f;
 
                 _sliderStyle = new GUIStyle(GUI.skin.horizontalSlider) { margin = new RectOffset(4, 4, 9, 9) };
@@ -454,7 +527,9 @@ namespace HS2CharaParamEditor
             GUILayout.BeginHorizontal();
             GUILayout.Label(string.IsNullOrEmpty(_charaName) ? LC("(名前なし)") : _charaName);
             GUILayout.FlexibleSpace();
-            GUILayout.Label(LC(_target != null && _target.IsLive ? "実体" : "カード"));
+            // 文字の有無で切り替える。コントロールの数を増減させると
+            // Layout と Repaint で食い違って IMGUI が壊れる。
+            GUILayout.Label(IsDirty() ? LC("(未保存)") : string.Empty);
             GUILayout.EndHorizontal();
 
             if (Foldout(LC("プロフィール"), ref _secProfile))
@@ -564,9 +639,6 @@ namespace HS2CharaParamEditor
             DrawSeparator();
 
             Row();
-            bool saveCard = GUILayout.Toggle(Plugin.CfgSaveCard.Value, LC("カードにも保存"));
-            if (saveCard != Plugin.CfgSaveCard.Value)
-                Plugin.CfgSaveCard.Value = saveCard;
 
             // 既定オフの危険側の設定なので、オンのときだけ色を変える。
             Color pc = GUI.color;
@@ -582,9 +654,12 @@ namespace HS2CharaParamEditor
             if (GUILayout.Button(LC("読み直す"), GUILayout.Width(_reloadApplyW)))
             {
                 LoadSlot();
+                // カードの値に戻すボタンなので、名前欄に打った文字も捨てる。
+                // 対象が変わっていないと LoadSlot 側ではフラグが立たない。
+                _clearFocus = true;
                 SetMessage(LC("現在の値を読み直しました。"));
             }
-            if (GUILayout.Button(LC("適用"), GUILayout.Width(_reloadApplyW)))
+            if (GUILayout.Button(LC("適用&保存"), GUILayout.Width(_reloadApplyW)))
                 DoApply();
             EndRow();
 
@@ -846,10 +921,18 @@ namespace HS2CharaParamEditor
             }
         }
 
+        /// <summary>読み込んだあとに値をいじったか。保存すれば消える。</summary>
+        private bool IsDirty()
+        {
+            if (_loadedState != null && !_state.SameAs(_loadedState))
+                return true;
+            return _eventAvailable && _eventChoice != _eventCurrentId;
+        }
+
         private void DoApply()
         {
             string message;
-            Applier.Apply(_target, _state, out message);
+            bool applied = Applier.Apply(_target, _state, out message);
 
             // イベントフラグはセーブデータ側の状態なので、カードの適用とは別に書き込む。
             if (_eventAvailable)
@@ -863,6 +946,10 @@ namespace HS2CharaParamEditor
                     ReadEventFlag();
                 }
             }
+
+            // 書き込めたので、ここが新しい「保存済みの値」になる。
+            if (applied)
+                _loadedState = _state.Clone();
 
             SetMessage(message);
         }

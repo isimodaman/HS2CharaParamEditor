@@ -97,6 +97,38 @@ namespace HS2CharaParamEditor
             }
         }
 
+        /// <summary>読み込み直後の控えを作る。未保存の判定に使う。</summary>
+        internal ParamState Clone()
+        {
+            return (ParamState)MemberwiseClone();
+        }
+
+        /// <summary>控えと同じ値か。違っていれば未保存。</summary>
+        internal bool SameAs(ParamState o)
+        {
+            return o != null
+                && Name == o.Name
+                && Personality == o.Personality
+                && VoiceRate == o.VoiceRate
+                && Trait == o.Trait
+                && Mind == o.Mind
+                && HAttribute == o.HAttribute
+                && Favor == o.Favor
+                && Slavery == o.Slavery
+                && Enjoyment == o.Enjoyment
+                && Aversion == o.Aversion
+                && Dependence == o.Dependence
+                && Broken == o.Broken
+                && Dirty == o.Dirty
+                && Tiredness == o.Tiredness
+                && Toilet == o.Toilet
+                && Libido == o.Libido
+                && NowState == o.NowState
+                && LockNowState == o.LockNowState
+                && LockBroken == o.LockBroken
+                && LockDependence == o.LockDependence;
+        }
+
         internal void ApplyTo(ChaFileControl file)
         {
             if (file == null)

@@ -21,13 +21,12 @@ namespace HS2CharaParamEditor
     {
         public const string GUID = "com.isimodaman.hs2.charaparamediter";
         public const string PluginName = "HS2CharaParamEditor";
-        public const string Version = "0.11.1.0";
+        public const string Version = "0.12.0.0";
 
         internal static ManualLogSource Log;
 
         internal static ConfigEntry<bool> CfgVisible;
         internal static ConfigEntry<KeyboardShortcut> CfgToggleKey;
-        internal static ConfigEntry<bool> CfgSaveCard;
         internal static ConfigEntry<bool> CfgBackupOnSave;
         internal static ConfigEntry<bool> CfgUnlockLimits;
         internal static ConfigEntry<string> CfgMergedPersonalities;
@@ -62,10 +61,6 @@ namespace HS2CharaParamEditor
                 "表示", "フォントサイズ", 12,
                 "パネルの文字サイズです。", new AcceptableValueRange<int>(9, 20));
             CfgFontSize.SettingChanged += OnFontChanged;
-
-            CfgSaveCard = ConfigBind(
-                "保存", "カードにも書き戻す", true,
-                "適用時にキャラカード(.png)へも保存します。オフにするとゲーム内の状態だけが変わります。");
 
             CfgBackupOnSave = ConfigBind(
                 "保存", "バックアップを作る", true,

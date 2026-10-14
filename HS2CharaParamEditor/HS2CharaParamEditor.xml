@@ -70,6 +70,7 @@
     <replace target="待ち合わせ画面にパネルを生成しました。" value="Generated a panel on the waiting screen." />
     <replace target="枠 {0} が未割り当てのため、パネルを表示しません。（{1}）" value="Slot {0} is unassigned, so the panel will not be displayed. ({1})" />
     <replace target="枠 {0} → {1}（{2}）" value="Slot {0} → {1} ({2})" />
+    <replace target="バニラのパラメータ表示に追従します。（枠 {0}）" value="Following the vanilla parameter panel. (Slot {0})" />
     <replace target="枠の読み込みに失敗しました: " value="Failed to load slot: " />
     <replace target="マップ選択に効くのは1人目のフラグです。" value="Map selection is determined by the first person's flag." />
     <replace target="取得に失敗: " value="Failed to retrieve: " />
@@ -108,11 +109,11 @@
     <replace target="現在" value="Current" />
     <replace target="設定" value="Settings" />
 
-    <replace target="カードにも保存" value="Save to card" />
     <replace target="上限解除" value="Unlock limits" />
     <replace target="読み直す" value="Reload" />
     <replace target="現在の値を読み直しました。" value="Reloaded current values." />
-    <replace target="適用" value="Apply" />
+    <replace target="適用&amp;保存" value="Apply &amp; Save" />
+    <replace target="(未保存)" value="(Unsaved)" />
 
     <replace target="1人目" value="1st girl" />
     <replace target="2人目" value="2nd girl" />
@@ -217,7 +218,6 @@
     <replace target="フォントサイズ" value="Font size" />
     <replace target="パネルの文字サイズです。" value="Text size for the panel." />
     <replace target="保存" value="Save" />
-    <replace target="カードにも書き戻す" value="Write back to the card" />
     <replace target="適用時にキャラカード(.png)へも保存します。オフにするとゲーム内の状態だけが変わります。" value="Saves changes to the character card (.png) when applied. If disabled, only the in-game state changes." />
     <replace target="バックアップを作る" value="Create a backup" />
     <replace target="カードへの初回保存時に .bak を同じフォルダに残します。" value="Saves a .bak file in the same folder upon the initial save to the card." />
